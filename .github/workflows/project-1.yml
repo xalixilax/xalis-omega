@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - "project-1/**"
+      - "resource-pack/project-1/**"
 
 jobs:
   log:
