@@ -1,0 +1,16 @@
+name: Publish on project 2
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "project-2/**"
+
+jobs:
+  log:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print something
+        run: echo "$(<./resource-pack/project-2/src/test.json)"
