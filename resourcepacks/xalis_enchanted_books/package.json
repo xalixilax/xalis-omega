@@ -1,0 +1,17 @@
+{
+  "name": "enchanted_books",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "pack": "bun run ./scripts/pack.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "canvas": "^3.0.1"
+  }
+}

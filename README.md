@@ -1,1 +1,1 @@
-# xali-s-omega
+# xali's omega
