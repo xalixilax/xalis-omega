@@ -1,7 +1,7 @@
 import path from "node:path";
-import type { EnchantedBookList } from "../enchants";
 import { citEnchantedBookFileTemplate } from "./templates";
 import { getOutputFolder } from "../utils/utils";
+import type { EnchantedBookList } from "../../enchants";
 
 // Function to create files for each enchanted book
 export function generateCitEnchantedBookPropertiesFile(
@@ -26,7 +26,8 @@ export function generateCitEnchantedBookPropertiesFile(
         const content = citEnchantedBookFileTemplate(
           modName,
           enchantment,
-          level
+          level,
+          maxLevel
         );
 
         // Write the file

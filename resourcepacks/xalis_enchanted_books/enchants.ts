@@ -56,7 +56,7 @@ export const enchantedBooks: EnchantedBookList = {
     { enchantment: "wind_burst", maxLevel: 3 },
   ],
   illager_plus: [
-    { enchantment: "illager_bane", maxLevel: 6, range: ["7-100"] },
+    { enchantment: "illager_bane", maxLevel: 7},
   ],
   alexsmobs: [
     { enchantment: "straddle_jump", maxLevel: 3 },

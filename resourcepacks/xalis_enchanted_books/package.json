@@ -1,9 +1,9 @@
 {
-  "name": "enchanted_books",
+  "name": "xalis_enchanted_books",
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "pack": "bun run ./scripts/pack.ts"
+    "build": "bun run index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"
