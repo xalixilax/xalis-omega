@@ -4,3 +4,4 @@ node_modules
 tools
 project-*
 .github
+.DS_Store

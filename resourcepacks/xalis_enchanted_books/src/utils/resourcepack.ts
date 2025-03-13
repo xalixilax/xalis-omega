@@ -21,26 +21,32 @@ export async function generateLicense(baseDir: string) {
 export async function copyReadme(baseDir: string) {
   const file = Bun.file("README.md");
 
-  if (!(await file.exists())) {
-    const path = join(baseDir, "README.md");
-    Bun.write(path, file);
+  if (!file.exists()) {
+    return;
   }
+  
+  const path = join(baseDir, "README.md");
+  Bun.write(path, file);
 }
 
 export function copyChangelogs(baseDir: string) {
   const file = Bun.file("CHANGELOG.md");
 
   if (!file.exists()) {
-    const path = join(baseDir, "CHANGELOG.md");
-    Bun.write(path, file);
+    return;
   }
+
+  const path = join(baseDir, "CHANGELOG.md");
+  Bun.write(path, file);
 }
 
 export function copyIcon(baseDir: string) {
-  const file = Bun.file("icon.png");
+  const file = Bun.file("pack.png");
 
   if (!file.exists()) {
-    const path = join(baseDir, "pack.png");
-    Bun.write(path, file);
+    return;
   }
+
+  const path = join(baseDir, "pack.png");
+  Bun.write(path, file);
 }

@@ -11,6 +11,7 @@ import { splitHorizontalTilemap } from "./src/utils/canvas";
 import { config } from "./resourcpack.config";
 import { generateItemsEnchantedBook, generateMinecraftItemModels } from "./src/vanilla/generate";
 import { generateCitEnchantedBookPropertiesFile } from "./src/optifine/generate";
+import { generateEnchantedBookOverrides } from "./src/data_pack/generate";
 
 const inputFolder = "./textures";
 
@@ -26,3 +27,5 @@ copyReadme(config.build.output);
 copyIcon(config.build.output);
 copyChangelogs(config.build.output);
 splitHorizontalTilemap(inputFolder, config.build.output).catch;
+
+generateEnchantedBookOverrides(enchantedBooks.minecraft, config.build.output);
