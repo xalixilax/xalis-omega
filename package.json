@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "eb": "pnpm --filter xalis_enchanted_books"
+    "eb": "pnpm --filter xalis_enchanted_books",
+    "ct": "pnpm --filter tooling"
   },
   "keywords": [],
   "author": "",

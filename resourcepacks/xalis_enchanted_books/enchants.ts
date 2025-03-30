@@ -36,7 +36,7 @@ export const enchantedBooks: EnchantedBookList = {
     { enchantment: "lure", maxLevel: 3 },
     { enchantment: "mending" },
     { enchantment: "multishot" },
-    { enchantment: "piercing", maxLevel: 5 },
+    { enchantment: "piercing", maxLevel: 4 },
     { enchantment: "power", maxLevel: 5 },
     { enchantment: "projectile_protection", maxLevel: 4 },
     { enchantment: "protection", maxLevel: 4 },
@@ -55,9 +55,7 @@ export const enchantedBooks: EnchantedBookList = {
     { enchantment: "unbreaking", maxLevel: 3 },
     { enchantment: "wind_burst", maxLevel: 3 },
   ],
-  illager_plus: [
-    { enchantment: "illager_bane", maxLevel: 7},
-  ],
+  illager_plus: [{ enchantment: "illager_bane", maxLevel: 7 }],
   alexsmobs: [
     { enchantment: "straddle_jump", maxLevel: 3 },
     { enchantment: "board_return" },
@@ -72,4 +70,5 @@ export const enchantedBooks: EnchantedBookList = {
   enchantedshulkers: [{ enchantment: "refill" }, { enchantment: "siphon" }],
   charm: [{ enchantment: "acquisition" }],
   veinmining: [{ enchantment: "vein_mining" }],
+  netherdepthsupgrade: [{ enchantment: "hell_strider", maxLevel: 3 }],
 };
