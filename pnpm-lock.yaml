@@ -75,6 +75,16 @@ importers:
         specifier: ^6.2.0
         version: 6.2.3(@types/node@22.13.14)(jiti@2.4.2)(lightningcss@1.29.2)
 
+  packages/lib:
+    dependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.2.11
+
   resourcepacks/xalis_enchanted_books:
     dependencies:
       canvas:
@@ -90,6 +100,29 @@ importers:
       chokidar-cli:
         specifier: ^3.0.0
         version: 3.0.0
+
+  resourcepacks/xalis_enhanced_vanilla:
+    dependencies:
+      canvas:
+        specifier: ^3.1.0
+        version: 3.1.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.2.11
+
+  resourcepacks/xalis_potions:
+    dependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.7.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.2.11
 
 packages:
 
@@ -605,6 +638,9 @@ packages:
   '@types/babel__traverse@7.20.7':
     resolution: {integrity: sha512-dkO5fhS7+/oos4ciWxyEyjWe48zmG6wbCheo/G2ZnHx4fs3EU6YC6UM8rk56gAjNJ9P3MTH2jo5jb92/K6wbng==}
 
+  '@types/bun@1.2.11':
+    resolution: {integrity: sha512-ZLbbI91EmmGwlWTRWuV6J19IUiUC5YQ3TCEuSHI3usIP75kuoA8/0PVF+LTrbEnVc8JIhpElWOxv1ocI1fJBbw==}
+
   '@types/bun@1.2.8':
     resolution: {integrity: sha512-t8L1RvJVUghW5V+M/fL3Thbxcs0HwNsXsnTEBEfEVqGteiJToOlZ/fyOEaR1kZsNqnu+3XA4RI/qmnX4w6+S+w==}
 
@@ -670,6 +706,9 @@ packages:
 
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
+
+  bun-types@1.2.11:
+    resolution: {integrity: sha512-dbkp5Lo8HDrXkLrONm6bk+yiiYQSntvFUzQp0v3pzTAsXk6FtgVMjdQ+lzFNVAmQFUkPQZ3WMZqH5tTo+Dp/IA==}
 
   bun-types@1.2.7:
     resolution: {integrity: sha512-P4hHhk7kjF99acXqKvltyuMQ2kf/rzIw3ylEDpCxDS9Xa0X0Yp/gJu/vDCucmWpiur5qJ0lwB2bWzOXa2GlHqA==}
@@ -1634,6 +1673,10 @@ snapshots:
     dependencies:
       '@babel/types': 7.27.0
 
+  '@types/bun@1.2.11':
+    dependencies:
+      bun-types: 1.2.11
+
   '@types/bun@1.2.8':
     dependencies:
       bun-types: 1.2.7
@@ -1709,6 +1752,10 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
+
+  bun-types@1.2.11:
+    dependencies:
+      '@types/node': 22.13.14
 
   bun-types@1.2.7:
     dependencies:

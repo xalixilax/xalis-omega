@@ -1,7 +1,6 @@
 import { createCanvas, loadImage } from "canvas";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { writeFile } from "node:fs/promises";
 
 export type SplitOptions = {
 	startIndex?: number;
@@ -26,20 +25,25 @@ export async function split(
 	options?: SplitOptions,
 ) {
 	const resolution = options?.resolution ?? 16; // Default resolution is 16x16
+	const tileCount = options?.tileCount ?? gridWidth * gridHeight;
 
 	if (!existsSync(output)) {
 		mkdirSync(output, { recursive: true });
 	}
 
 	const img = await loadImage(input);
-	const canvas = createCanvas(resolution, resolution);
+	const canvas = createCanvas(16, 16);
 	const ctx = canvas.getContext("2d");
 
 	let index = options?.startIndex ?? 0;
 
 	for (let y = 0; y < gridHeight; y++) {
 		for (let x = 0; x < gridWidth; x++) {
-			ctx.clearRect(0, 0, resolution, resolution);
+			if (index >= tileCount) {
+				return;
+			}
+
+			ctx.clearRect(0, 0, 16, 16);
 			ctx.drawImage(
 				img,
 				x * -resolution,
@@ -48,9 +52,10 @@ export async function split(
 				img.height,
 			);
 
+			const buffer = canvas.toBuffer("image/png");
 			const outputPath = join(output, `${index}.png`);
-			await writeFile(outputPath, canvas.toBuffer("image/png"));
-			console.log(`✅ Extracted : ${outputPath}`);
+			writeFileSync(outputPath, buffer);
+			//console.log(`✅ Extracted : ${outputPath}`);
 
 			index++;
 		}
@@ -68,5 +73,5 @@ export async function splitOverlayTemplate(
 	output: string,
 	options?: Omit<SplitOptions, "tileCount">,
 ) {
-	await split(input, output, 3, 7, { ...options, tileCount: 17 });
+	await split(input, output, 7, 3, { ...options, tileCount: 17 });
 }

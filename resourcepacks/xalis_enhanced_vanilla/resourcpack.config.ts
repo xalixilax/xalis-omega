@@ -27,7 +27,8 @@ export const config: Config = {
 	},
 	build: {
 		output:
-			//"/Users/xalix/Library/Application Support/PrismLauncher/instances/Fabulously Optimized/.minecraft/resourcepacks/release",
-		"./dist",
+		"/Users/xalix/Library/Application Support/PrismLauncher/instances/1.21.5(1)/minecraft/resourcepacks/enhanced-vanilla-dev"
+			//"/Users/xalix/Library/Application Support/PrismLauncher/instances/Fabulously Optimized/minecraft/resourcepacks/release",
+		//"./dist",
 	},
 };
