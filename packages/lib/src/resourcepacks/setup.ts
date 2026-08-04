@@ -3,7 +3,7 @@ import type { Config } from "@lib/types/config";
 import fs from "node:fs";
 
 export function generateMcmeta(config: Config) {
-  const content = JSON.stringify({ pack: config.pack }, null, 2);
+  const content = JSON.stringify(config.pack, null, 2);
 
   const path = join(config.build.output, "pack.mcmeta");
   Bun.write(path, content);

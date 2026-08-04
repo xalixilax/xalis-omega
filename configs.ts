@@ -1,3 +1,4 @@
 export const globalConfig = {
-    outDir: "/Users/xalix/Library/Application Support/PrismLauncher/instances/1.21.11/minecraft/resourcepacks"
+    output: "/Users/xalix/Library/Application Support/PrismLauncher/resourcepacks"
+    // outDir: "/Users/xalix/Library/Application Support/minecraft/resourcepacks"
 }

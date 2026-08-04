@@ -1,0 +1,392 @@
+[
+    {
+        "name": "Minecraft 26",
+        "value": 81493,
+        "indent": 0
+    },
+    {
+        "name": "26.1-snapshot",
+        "value": 14446,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.21",
+        "value": 77784,
+        "indent": 0
+    },
+    {
+        "name": "1.21.11",
+        "value": 14406,
+        "indent": 1
+    },
+    {
+        "name": "1.21.11-snapshot",
+        "value": 14001,
+        "indent": 1
+    },
+    {
+        "name": "1.21.10",
+        "value": 13964,
+        "indent": 1
+    },
+    {
+        "name": "1.21.9",
+        "value": 13927,
+        "indent": 1
+    },
+    {
+        "name": "1.21.9-snapshot",
+        "value": 13696,
+        "indent": 1
+    },
+    {
+        "name": "1.21.8",
+        "value": 13620,
+        "indent": 1
+    },
+    {
+        "name": "1.21.7",
+        "value": 13506,
+        "indent": 1
+    },
+    {
+        "name": "1.21.6",
+        "value": 13422,
+        "indent": 1
+    },
+    {
+        "name": "1.21.6-snapshot",
+        "value": 13028,
+        "indent": 1
+    },
+    {
+        "name": "1.21.5",
+        "value": 12934,
+        "indent": 1
+    },
+    {
+        "name": "1.21.5-Snapshot",
+        "value": 12503,
+        "indent": 1
+    },
+    {
+        "name": "1.21.4",
+        "value": 12281,
+        "indent": 1
+    },
+    {
+        "name": "1.21.4-Snapshot",
+        "value": 12116,
+        "indent": 1
+    },
+    {
+        "name": "1.21.3",
+        "value": 12084,
+        "indent": 1
+    },
+    {
+        "name": "1.21.2",
+        "value": 12079,
+        "indent": 1
+    },
+    {
+        "name": "1.21.2-Snapshot",
+        "value": 11813,
+        "indent": 1
+    },
+    {
+        "name": "1.21.1",
+        "value": 11779,
+        "indent": 1
+    },
+    {
+        "name": "1.21.1-Snapshot",
+        "value": 11774,
+        "indent": 1
+    },
+    {
+        "name": "1.21",
+        "value": 11457,
+        "indent": 1
+    },
+    {
+        "name": "1.21-Snapshot",
+        "value": 11246,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.20",
+        "value": 75125,
+        "indent": 0
+    },
+    {
+        "name": "1.20.6",
+        "value": 11198,
+        "indent": 1
+    },
+    {
+        "name": "1.20.5",
+        "value": 11163,
+        "indent": 1
+    },
+    {
+        "name": "1.20.5-Snapshot",
+        "value": 10549,
+        "indent": 1
+    },
+    {
+        "name": "1.20.4",
+        "value": 10407,
+        "indent": 1
+    },
+    {
+        "name": "1.20.3",
+        "value": 10395,
+        "indent": 1
+    },
+    {
+        "name": "1.20.3-Snapshot",
+        "value": 10266,
+        "indent": 1
+    },
+    {
+        "name": "1.20.2",
+        "value": 10236,
+        "indent": 1
+    },
+    {
+        "name": "1.20.2-Snapshot",
+        "value": 10162,
+        "indent": 1
+    },
+    {
+        "name": "1.20.1",
+        "value": 9990,
+        "indent": 1
+    },
+    {
+        "name": "1.20",
+        "value": 9971,
+        "indent": 1
+    },
+    {
+        "name": "1.20-Snapshot",
+        "value": 9559,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.19",
+        "value": 73407,
+        "indent": 0
+    },
+    {
+        "name": "1.19.4-Snapshot",
+        "value": 9868,
+        "indent": 1
+    },
+    {
+        "name": "1.19.4",
+        "value": 9776,
+        "indent": 1
+    },
+    {
+        "name": "1.19.3-Snapshot",
+        "value": 9859,
+        "indent": 1
+    },
+    {
+        "name": "1.19.3",
+        "value": 9550,
+        "indent": 1
+    },
+    {
+        "name": "1.19.2",
+        "value": 9366,
+        "indent": 1
+    },
+    {
+        "name": "1.19.1",
+        "value": 9259,
+        "indent": 1
+    },
+    {
+        "name": "1.19",
+        "value": 9186,
+        "indent": 1
+    },
+    {
+        "name": "1.19-Snapshot",
+        "value": 8993,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.18",
+        "value": 73250,
+        "indent": 0
+    },
+    {
+        "name": "1.18.2",
+        "value": 9008,
+        "indent": 1
+    },
+    {
+        "name": "1.18.1",
+        "value": 8857,
+        "indent": 1
+    },
+    {
+        "name": "1.18",
+        "value": 8830,
+        "indent": 1
+    },
+    {
+        "name": "1.18-Snapshot",
+        "value": 8633,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.17",
+        "value": 73242,
+        "indent": 0
+    },
+    {
+        "name": "1.17.1",
+        "value": 8516,
+        "indent": 1
+    },
+    {
+        "name": "1.17-Snapshot",
+        "value": 8282,
+        "indent": 1
+    },
+    {
+        "name": "1.17",
+        "value": 8152,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.16",
+        "value": 70886,
+        "indent": 0
+    },
+    {
+        "name": "1.16.5",
+        "value": 8203,
+        "indent": 1
+    },
+    {
+        "name": "1.16.4",
+        "value": 8134,
+        "indent": 1
+    },
+    {
+        "name": "1.16.3",
+        "value": 8056,
+        "indent": 1
+    },
+    {
+        "name": "1.16.2",
+        "value": 8010,
+        "indent": 1
+    },
+    {
+        "name": "1.16.1",
+        "value": 7892,
+        "indent": 1
+    },
+    {
+        "name": "1.16",
+        "value": 7890,
+        "indent": 1
+    },
+    {
+        "name": "1.16-Snapshot",
+        "value": 7751,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.15",
+        "value": 68722,
+        "indent": 0
+    },
+    {
+        "name": "1.15.2",
+        "value": 7722,
+        "indent": 1
+    },
+    {
+        "name": "1.15.1",
+        "value": 7675,
+        "indent": 1
+    },
+    {
+        "name": "1.15",
+        "value": 7664,
+        "indent": 1
+    },
+    {
+        "name": "1.15-Snapshot",
+        "value": 7519,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.14",
+        "value": 64806,
+        "indent": 0
+    },
+    {
+        "name": "1.14.4",
+        "value": 7469,
+        "indent": 1
+    },
+    {
+        "name": "1.14.3",
+        "value": 7413,
+        "indent": 1
+    },
+    {
+        "name": "1.14.2",
+        "value": 7361,
+        "indent": 1
+    },
+    {
+        "name": "1.14.1",
+        "value": 7344,
+        "indent": 1
+    },
+    {
+        "name": "1.14",
+        "value": 7318,
+        "indent": 1
+    },
+    {
+        "name": "1.14-Snapshot",
+        "value": 7133,
+        "indent": 1
+    },
+    {
+        "name": "Minecraft 1.13",
+        "value": 55023,
+        "indent": 0
+    },
+    {
+        "name": "1.13.2",
+        "value": 7132,
+        "indent": 1
+    },
+    {
+        "name": "1.13.1",
+        "value": 7107,
+        "indent": 1
+    },
+    {
+        "name": "1.13",
+        "value": 7081,
+        "indent": 1
+    },
+    {
+        "name": "1.13-Snapshot",
+        "value": 6834,
+        "indent": 1
+    }
+]

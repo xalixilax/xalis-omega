@@ -3,9 +3,6 @@ import { join } from "node:path";
 import { config } from "../config.ts";
 import { getPotionAssetName } from "../utils/utils";
 
-const OUTPUT_DIR = `${config.build.output}/assets/minecraft/models/item`;
-
-
 const potionPrefix = {
   p: "",
   s: "splash_",
@@ -18,23 +15,70 @@ const potionAttributes = {
 } as const;
 
 function generateModel(name: string, type: "p" | "s" | "l", variant?: "l" | "s") {
+  generateLegacyVanillaModel(name, type, variant);
+  generateVanillaModel(name, type, variant);
+  generateOptifineModel(name, type, variant);
+  generateOptifineLegacyModel(name, type, variant);
+}
+
+function generateVanillaModel(
+  name: string,
+  type: "p" | "s" | "l",
+  variant?: "l" | "s"
+) {
   const assetName = getPotionAssetName(name, type, variant);
   const modelData = {
     parent: "minecraft:item/generated",
     textures: {
+      // layer0: `minecraft:item/invisible`,
       layer0: `minecraft:item/${assetName}`,
     },
   };
 
-  generateOptifineModel(name, type, variant);
+  const folder = join(
+    config.build.output,
+    "55",
+    "assets",
+    "minecraft",
+    "models",
+    "item"
+  );
 
-  const filePath = join(OUTPUT_DIR, `${assetName}.json`);
+  const filePath = join(folder, `${assetName}.json`);
 
   //writeFileSync(filePath, JSON.stringify(modelData, null, 2));
   Bun.write(filePath, JSON.stringify(modelData, null, 2));
 }
 
-function generateOptifineModel(
+// Legacy model takes an invisible layer to remove tinting effects
+function generateLegacyVanillaModel(
+  name: string,
+  type: "p" | "s" | "l",
+  variant?: "l" | "s"
+) {
+  const assetName = getPotionAssetName(name, type, variant);
+  const modelData = {
+    parent: "minecraft:item/generated",
+    textures: {
+      layer0: `minecraft:item/o`,
+      layer1: `minecraft:item/${assetName}`,
+    },
+  };
+
+  const folder = join(
+    config.build.output,
+    "assets",
+    "minecraft",
+    "models",
+    "item"
+  );
+
+  const filePath = join(folder, `${assetName}.json`);
+
+  Bun.write(filePath, JSON.stringify(modelData, null, 2));
+}
+
+function generateOptifineLegacyModel(
   name: string,
   type: "p" | "s" | "l",
   variant?: "l" | "s"
@@ -48,6 +92,32 @@ model=item/${assetName}`;
 
   const folder = join(
     config.build.output,
+    "assets",
+    "minecraft",
+    "optifine",
+    "cit"
+  );
+
+  const optifineFilePath = join(folder, `${assetName}.properties`);
+
+  Bun.write(optifineFilePath, optifineData);
+}
+
+function generateOptifineModel(
+  name: string,
+  type: "p" | "s" | "l",
+  variant?: "l" | "s"
+) {
+  const assetName = getPotionAssetName(name, type, variant);
+
+  const optifineData = `type=item
+items=${potionPrefix[type]}potion
+components.potion_contents.potion=minecraft:${variant ? potionAttributes[variant] : ""}${name}
+model=item/${assetName}`;
+
+  const folder = join(
+    config.build.output,
+    "32-64",
     "assets",
     "minecraft",
     "optifine",

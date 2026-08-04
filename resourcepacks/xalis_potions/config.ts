@@ -7,9 +7,6 @@ import type { Config } from "@lib/types/config";
 export const config: Config = {
     ...localConfig,
     build: {
-        ...localConfig.build,
-        // If local output is not set, use global outDir as fallback
-        output:
-            localConfig.build?.output || join(globalConfig.outDir, localConfig.name),
+        output: join(globalConfig.output, localConfig.name),
     },
 };
