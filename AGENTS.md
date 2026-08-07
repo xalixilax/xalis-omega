@@ -1,0 +1,2 @@
+- You **MUST** set temporary files, like console outputs, into .tmp folders
+- Always talk in ASD-STE100 Simplified Technical English. Always read [CONTEXT.md](./docs/CONTEXT.md) files, and use their ubiquitous language.

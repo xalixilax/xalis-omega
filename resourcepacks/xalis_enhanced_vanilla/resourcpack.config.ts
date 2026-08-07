@@ -19,7 +19,7 @@ export const config: Config = {
 	licenseUrl: "https://creativecommons.org/licenses/by-nc/4.0/legalcode.txt",
 	pack: {
 		pack_format: 71,
-		supported_formats: [4, 71],
+		supported_formats: [34, 71],
 		description: "§6By xalixilax",
 	},
 	page: {

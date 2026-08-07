@@ -169,18 +169,30 @@ export class CtmPropertiesBase {
 						}
 						break;
 					case "connectBlocks":
-						properties.push(
-							`connectBlocks=${Array.from(value as Set<string>).join(" ")}`,
-						);
+						if (value) {
+							properties.push(
+								`connectBlocks=${Array.from(value as unknown as Set<string>).join(" ")}`,
+							);
+						}
 						break;
 					default:
 						if (value !== undefined) {
-							properties.push(`${key}=${value}`);
+							properties.push(
+								`${key}=${CtmPropertiesBase.dedupeTokens(key, String(value))}`,
+							);
 						}
 				}
 			}
 
 			return properties.join("\n");
+		}
+
+		private static dedupeTokens(key: string, value: string): string {
+			if (!["matchBlocks", "biomes", "matchTiles", "tiles", "connectTiles"].includes(key)) {
+				return value;
+			}
+
+			return [...new Set(value.split(/\s+/).filter(Boolean))].join(" ");
 		}
 
 		test(): void {

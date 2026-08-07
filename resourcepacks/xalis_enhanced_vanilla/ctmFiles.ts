@@ -75,7 +75,7 @@ const bricksOverlay = new Set([
 ]);
 
 const snowyBiomes =
-	"snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga snowy_taiga_mountains frozen_river snowy_beach snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands";
+	"snowy_beach snowy_plains snowy_slopes ice_spikes snowy_taiga frozen_river grove jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands";
 
 const grassMatchBlocks = flattenMinecraftBlocksArgs(
 	minecraftBlocks.grasses,
@@ -140,7 +140,7 @@ export const files: Partial<CtmPacks> = {
 					tintBlock: "grass_block",
 					tintIndex: 0,
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					tiles: "0-16",
@@ -158,7 +158,7 @@ export const files: Partial<CtmPacks> = {
 					connectBlocks: new Set(["grass_block:snowy=false"]),
 					heights: "0-61",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					tiles: "40-56",
@@ -167,17 +167,17 @@ export const files: Partial<CtmPacks> = {
 					tintBlock: "grass_block",
 					tintIndex: 0,
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					tiles: "60-76",
-					matchBlocks: "dirth_path",
+					matchBlocks: "dirt_path",
 					faces: ["top"],
 					connectBlocks: new Set(["grass_block"]),
 					tintBlock: "grass_block",
 					tintIndex: 0,
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 
 				new CtmPropertiesOverlay({
@@ -188,7 +188,7 @@ export const files: Partial<CtmPacks> = {
 					faces: ["north", "south", "top", "bottom"],
 					connectBlocks: new Set(["grass_block:snowy=false"]),
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					// sides axis y
@@ -198,7 +198,7 @@ export const files: Partial<CtmPacks> = {
 					faces: ["sides"],
 					connectBlocks: new Set(["grass_block:snowy=false"]),
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					// sides axis z
@@ -208,7 +208,7 @@ export const files: Partial<CtmPacks> = {
 					faces: ["top", "bottom", "east", "west"],
 					connectBlocks: new Set(["grass_block:snowy=false"]),
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 
 				new CtmPropertiesOverlay({
@@ -221,7 +221,7 @@ export const files: Partial<CtmPacks> = {
 					tintIndex: 0,
 					tintBlock: "grass_block",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					// top axis y
@@ -233,7 +233,7 @@ export const files: Partial<CtmPacks> = {
 					tintIndex: 0,
 					tintBlock: "grass_block",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					// top axis z
@@ -245,7 +245,7 @@ export const files: Partial<CtmPacks> = {
 					tintIndex: 0,
 					tintBlock: "grass_block",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 
 				new CtmPropertiesOverlay({
@@ -258,7 +258,7 @@ export const files: Partial<CtmPacks> = {
 					tintIndex: 0,
 					tintBlock: "grass_block",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					// z sides axis y overlay
@@ -270,7 +270,7 @@ export const files: Partial<CtmPacks> = {
 					tintIndex: 0,
 					tintBlock: "grass_block",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 				new CtmPropertiesOverlay({
 					// z sides axis z overlay
@@ -282,7 +282,7 @@ export const files: Partial<CtmPacks> = {
 					tintIndex: 0,
 					tintBlock: "grass_block",
 					biomes:
-						"!snowy_taiga snowy_beach snowy_tundra snowy_mountains ice_spikes snowy_taiga_hills snowy_taiga_mountains frozen_river snowy_plains grove snowy_slopes jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands",
+						snowyBiomes,
 				}),
 			],
 			mycelium: [
@@ -503,7 +503,7 @@ export const files: Partial<CtmPacks> = {
 				}),
 				new CtmPropertiesOverlayFixed({
 					tiles: "snow",
-					heights: "62-256",
+					heights: "63-256",
 					matchBlocks: "grass_block",
 					biomes: snowyBiomes,
 				}),
@@ -514,7 +514,7 @@ export const files: Partial<CtmPacks> = {
 					matchTiles:
 						"grass_block_snow grass_block_side_overlay grass_block_top",
 					weights: "1 1 8 1 1 20",
-					heights: "62-256",
+					heights: "63-256",
 				}),
 				new CtmPropertiesOverlayFixed({
 					biomes: snowyBiomes,
@@ -525,9 +525,9 @@ export const files: Partial<CtmPacks> = {
 				}),
 				new CtmPropertiesOverlayFixed({
 					biomes: snowyBiomes,
-					tiles: "50",
+					tiles: "grass_block_snow",
 					faces: ["sides"],
-					matchBlocks: "grass_block_snow",
+					matchBlocks: "grass_block",
 					heights: "62",
 				}),
 				new CtmPropertiesOverlayFixed({
@@ -591,14 +591,14 @@ export const files: Partial<CtmPacks> = {
 				new CtmPropertiesRandom({
 					tiles: "0-12",
 					matchTiles: "block/inv",
-					matchBlocks: "grass",
+					matchBlocks: "short_grass",
 					biomes: snowyBiomes,
 				}),
 				new CtmPropertiesFixed({
 					matchTiles:
-						"grass/grass grass/grass_1 grass/grass_2 grass/grass_3 grass/grass_4 grass/grass_5 grass/grass_6 grass/grass_7 grass/grass_8 grass/grass_9 grass/grass_10 grass/grass_11 grass/grass_12",
+						"block/short_grass/grass block/short_grass/grass_1 block/short_grass/grass_2 block/short_grass/grass_3 block/short_grass/grass_4 block/short_grass/grass_5 block/short_grass/grass_6 block/short_grass/grass_7 block/short_grass/grass_8 block/short_grass/grass_9 block/short_grass/grass_10 block/short_grass/grass_11 block/short_grass/grass_12",
 					biomes: snowyBiomes,
-					tiles: "block/inv",
+					tiles: "inv",
 				}),
 			],
 			tall_grass: [
@@ -614,13 +614,13 @@ export const files: Partial<CtmPacks> = {
 					biomes: snowyBiomes,
 				}),
 				new CtmPropertiesFixed({
-					tiles: "block/inv",
+					tiles: "inv",
 					matchTiles: "tall_grass_top tall_grass_top_1 tall_grass_top_2",
 					biomes: snowyBiomes,
 				}),
 				new CtmPropertiesFixed({
 					tiles: "snowy_tall_grass_top",
-					matchTiles: "block",
+					matchTiles: "block/inv",
 					matchBlocks: "tall_grass:half=upper",
 					biomes: snowyBiomes,
 				}),
@@ -678,7 +678,7 @@ export const files: Partial<CtmPacks> = {
 				new CtmPropertiesFixed({
 					tiles: "0",
 					matchTiles: "block/inv",
-					matchBlocks: "grass_block_snow",
+					matchBlocks: "snow_block",
 					biomes: snowyBiomes,
 					heights: "63-256",
 				}),
@@ -831,7 +831,9 @@ function handleOverlay(
 			overlays.delete(connectedBlock);
 		}
 
-		property.matchBlocks = Array.from(overlays).join(" ");
+		if (!property.matchBlocks) {
+			property.matchBlocks = Array.from(overlays).join(" ");
+		}
 	}
 }
 
