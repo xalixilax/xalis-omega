@@ -5,3 +5,4 @@ tools
 project-*
 .github
 .DS_Store
+.tmp
