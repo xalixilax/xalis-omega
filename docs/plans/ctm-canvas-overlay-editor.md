@@ -235,6 +235,8 @@ Deviations from the sections above:
   checkerboard backdrop was removed.
 - **Stroke fix** — dragging across a cell boundary starts a fresh stroke
   segment instead of smearing a line across the new cell.
+- **Guides toggle** — the bluish dashed connection markers are off by
+  default; a "Guides" checkbox shows them when wanted.
 
 
 ```

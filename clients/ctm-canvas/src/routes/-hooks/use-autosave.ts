@@ -20,6 +20,7 @@ type SavedState = {
   activeLayer?: EditorState['activeLayer']
   viewMode?: EditorState['viewMode']
   overlayVisible?: boolean
+  guidesVisible?: boolean
   maskDim?: number
   backgroundB64?: string | null
   matchBlocks: string
@@ -51,6 +52,7 @@ function serialize(state: EditorState): SavedState | null {
     activeLayer: state.activeLayer,
     viewMode: state.viewMode,
     overlayVisible: state.overlayVisible,
+    guidesVisible: state.guidesVisible,
     maskDim: state.maskDim,
     backgroundB64:
       state.background === null ? null : bytesToBase64(state.background),
@@ -116,6 +118,7 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
           ? saved.viewMode
           : 'result',
       overlayVisible: saved.overlayVisible !== false,
+      guidesVisible: saved.guidesVisible === true,
       maskDim:
         typeof saved.maskDim === 'number' && Number.isFinite(saved.maskDim)
           ? Math.min(100, Math.max(0, Math.round(saved.maskDim)))

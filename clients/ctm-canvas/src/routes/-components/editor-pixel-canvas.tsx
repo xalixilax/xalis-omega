@@ -19,6 +19,7 @@ export function EditorPixelCanvas() {
   const viewMode = useEditor((state) => state.viewMode)
   const maskDim = useEditor((state) => state.maskDim)
   const overlayVisible = useEditor((state) => state.overlayVisible)
+  const guidesVisible = useEditor((state) => state.guidesVisible)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const guideCanvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -101,6 +102,9 @@ export function EditorPixelCanvas() {
       return
     }
     context.clearRect(0, 0, canvas.width, canvas.height)
+    if (!guidesVisible) {
+      return
+    }
 
     // Connection guides: faint dashed lines along connected sides, tiny
     // squares in connected corners.
@@ -149,7 +153,7 @@ export function EditorPixelCanvas() {
       }
     }
     context.setLineDash([])
-  }, [tileSize])
+  }, [tileSize, guidesVisible])
 
   if (tileSize === null) {
     return null

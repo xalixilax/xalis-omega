@@ -142,6 +142,10 @@ export function setOverlayVisible(overlayVisible: boolean): void {
   update({ overlayVisible })
 }
 
+export function setGuidesVisible(guidesVisible: boolean): void {
+  update({ guidesVisible })
+}
+
 export function setMaskDim(maskDim: number): void {
   update({ maskDim: Math.min(100, Math.max(0, Math.round(maskDim))) })
 }

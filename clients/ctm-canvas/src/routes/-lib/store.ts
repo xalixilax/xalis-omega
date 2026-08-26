@@ -30,6 +30,8 @@ export type EditorState = {
   viewMode: ViewMode
   /** Show the overlay composite in Result view; off = pure base texture. */
   overlayVisible: boolean
+  /** Show the per-tile connection guides (dashed side/corner markers). */
+  guidesVisible: boolean
   /** Percent of darkness applied to pixels outside the alpha mask (0-100). */
   maskDim: number
   /** Optional underlay texture (N*N*4) shown behind the overlay. */
@@ -54,6 +56,7 @@ export const initialEditorState: EditorState = {
   activeLayer: 'alpha',
   viewMode: 'result',
   overlayVisible: true,
+  guidesVisible: false,
   maskDim: 65,
   background: null,
   matchBlocks: '',

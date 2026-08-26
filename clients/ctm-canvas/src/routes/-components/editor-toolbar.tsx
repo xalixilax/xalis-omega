@@ -3,6 +3,7 @@ import { Eraser, Hand, Paintbrush, Pipette, X } from 'lucide-react'
 import {
   setActiveLayer,
   setBackground,
+  setGuidesVisible,
   setMaskDim,
   setOverlayVisible,
   setTool,
@@ -35,6 +36,7 @@ export function EditorToolbar() {
   const viewMode = useEditor((state) => state.viewMode)
   const maskDim = useEditor((state) => state.maskDim)
   const overlayVisible = useEditor((state) => state.overlayVisible)
+  const guidesVisible = useEditor((state) => state.guidesVisible)
   const hasBackground = useEditor((state) => state.background !== null)
 
   const backgroundInputRef = useRef<HTMLInputElement | null>(null)
@@ -135,6 +137,19 @@ export function EditorToolbar() {
             className="accent-sky-500"
           />
           Overlay
+        </label>
+
+        <label
+          className="flex items-center gap-2"
+          title="Per-tile connection guides (dashed side/corner markers)"
+        >
+          <input
+            type="checkbox"
+            checked={guidesVisible}
+            onChange={(event) => setGuidesVisible(event.target.checked)}
+            className="accent-sky-500"
+          />
+          Guides
         </label>
 
         <label
