@@ -179,4 +179,26 @@ clients/ctm-canvas/src/
 - Per-tile color quantisation vs free palette restriction relaxation.
 - Resume from a previously exported PNG (re-parse into sheets).
 - Side-by-side base-only vs overlaid preview toggle.
+
+## Implementation notes (v1 shipped)
+
+Implemented in `clients/ctm-canvas` with TanStack Start 1.x, TanStack Store,
+Tailwind v4, and Vitest (`pnpm --filter ctm-canvas dev|build|test|typecheck`).
+Deviations from the sections above:
+
+- **Corner semantics** — corners in the descriptor table are literal
+  diagonal-neighbour flags, not derived from adjacent sides. Tiles 0/2/14/16
+  cover diagonal-only patterns; side strips carry their own corner pixels
+  (tile 11 lists top + left and no corner). `tileIndexForNeighbors`
+  mirrors this convention and returns null for isolated blocks and for the
+  straight-line pairs left+right / top+bottom.
+- **Sheet arrays** — `alpha` is `Uint8Array(17 * N * N)`; padding cells are
+  never materialised because the export composes used cells only.
+- **Template decoding** — a template counts as visible either through its
+  alpha channel (>127) or, when fully opaque, through luminance (>127). The
+  bundled `soft-stone.png` uses opaque black on transparent.
+- **Tests** — pure logic only (overlay lookup, properties builder, sheet
+  composition). PNG encode/decode runs in the browser via canvas APIs and is
+  not covered by Node tests.
+
 ```
