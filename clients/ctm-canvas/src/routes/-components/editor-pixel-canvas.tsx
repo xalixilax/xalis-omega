@@ -21,6 +21,7 @@ export function EditorPixelCanvas() {
   const guideCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const handlers = usePixelPointer(canvasRef, scrollRef)
+  const viewMode = useEditor((state) => state.viewMode)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -38,25 +39,40 @@ export function EditorPixelCanvas() {
       return
     }
 
+    const mode = state.viewMode
     const tileImage = context.createImageData(tileSize, tileSize)
     const pixels = tileSize * tileSize
     for (let cell = 0; cell < USED_CELLS; cell++) {
       const origin = cellOffsetPx(cell, tileSize)
-      tileImage.data.set(base.subarray(0, pixels * 4))
       const cellBase = cell * pixels
       for (let i = 0; i < pixels; i++) {
-        if (alpha[cellBase + i] === 1) {
+        const target = i * 4
+        if (mode === 'alpha') {
+          // Black/white mask view: white = overlay pixel visible.
+          const visible = alpha[cellBase + i] === 1
+          tileImage.data[target] = visible ? 255 : 0
+          tileImage.data[target + 1] = visible ? 255 : 0
+          tileImage.data[target + 2] = visible ? 255 : 0
+          tileImage.data[target + 3] = 255
+          continue
+        }
+        // Base texture sits underneath in both other views.
+        tileImage.data[target] = base[target]
+        tileImage.data[target + 1] = base[target + 1]
+        tileImage.data[target + 2] = base[target + 2]
+        tileImage.data[target + 3] = 255
+        if (mode === 'color' || alpha[cellBase + i] === 1) {
           const source = (cellBase + i) * 4
-          tileImage.data[i * 4] = color[source]
-          tileImage.data[i * 4 + 1] = color[source + 1]
-          tileImage.data[i * 4 + 2] = color[source + 2]
-          tileImage.data[i * 4 + 3] = 255
+          tileImage.data[target] = color[source]
+          tileImage.data[target + 1] = color[source + 1]
+          tileImage.data[target + 2] = color[source + 2]
+          tileImage.data[target + 3] = 255
         }
       }
       context.putImageData(tileImage, origin.x, origin.y)
     }
     void revision
-  }, [tileSize, revision])
+  }, [tileSize, revision, viewMode])
 
   useEffect(() => {
     const canvas = guideCanvasRef.current

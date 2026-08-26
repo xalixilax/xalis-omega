@@ -6,9 +6,19 @@ import { useEditor } from '../-hooks/use-editor-store'
 export function EditorPalette() {
   const palette = useEditor((state) => state.palette)
   const activeColor = useEditor((state) => state.activeColor)
+  const activeLayer = useEditor((state) => state.activeLayer)
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div
+      className={`flex flex-wrap items-center gap-1.5 ${
+        activeLayer === 'alpha' ? 'pointer-events-none opacity-40' : ''
+      }`}
+      title={
+        activeLayer === 'alpha'
+          ? 'Switch to the color layer to use the palette'
+          : undefined
+      }
+    >
       {palette.map((hex) => (
         <button
           key={hex}

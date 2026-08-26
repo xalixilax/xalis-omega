@@ -17,6 +17,8 @@ type SavedState = {
   activeColor: string
   activeCell: number
   tool: EditorState['tool']
+  activeLayer?: EditorState['activeLayer']
+  viewMode?: EditorState['viewMode']
   matchBlocks: string
   connectBlocks: string
   startIndex: number
@@ -43,6 +45,8 @@ function serialize(state: EditorState): SavedState | null {
     activeColor: state.activeColor,
     activeCell: state.activeCell,
     tool: state.tool,
+    activeLayer: state.activeLayer,
+    viewMode: state.viewMode,
     matchBlocks: state.matchBlocks,
     connectBlocks: state.connectBlocks,
     startIndex: state.startIndex,
@@ -81,6 +85,16 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
       activeColor: saved.activeColor,
       activeCell: Math.min(Math.max(0, saved.activeCell), USED_CELLS - 1),
       tool: saved.tool,
+      activeLayer:
+        saved.activeLayer === 'color' || saved.activeLayer === 'alpha'
+          ? saved.activeLayer
+          : 'alpha',
+      viewMode:
+        saved.viewMode === 'result' ||
+        saved.viewMode === 'color' ||
+        saved.viewMode === 'alpha'
+          ? saved.viewMode
+          : 'result',
       matchBlocks: saved.matchBlocks,
       connectBlocks: saved.connectBlocks,
       startIndex: saved.startIndex,

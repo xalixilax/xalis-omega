@@ -201,4 +201,16 @@ Deviations from the sections above:
   composition). PNG encode/decode runs in the browser via canvas APIs and is
   not covered by Node tests.
 
+## Layer-aware editing (feedback round 1)
+
+- The toolbar gained **Draw on** (alpha / color layer) and **View**
+  (result / color / alpha) switches. The alpha view renders the binary mask
+  as black/white at runtime; the color view shows base + full color ignoring
+  the mask.
+- Strokes are per-layer: on the alpha layer, paint shows pixels and erase
+  hides them (colors untouched). On the color layer, paint writes the active
+  palette colour and erase restores the base sprite pixel (visibility
+  untouched). Right-click forces an erase on either layer.
+- The palette is disabled while the alpha layer is selected.
+
 ```

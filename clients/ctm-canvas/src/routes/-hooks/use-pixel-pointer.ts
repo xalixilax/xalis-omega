@@ -104,13 +104,12 @@ export function usePixelPointer(
         return
       }
       event.currentTarget.setPointerCapture(event.pointerId)
-      const erasing = tool === 'erase' || (event.buttons & 2) !== 0
-      if (tool === 'picker' && !erasing) {
+      if (tool === 'picker' && (event.buttons & 2) === 0) {
         pickPixel(target.cell, target.x, target.y)
         return
       }
       lastPixel.current = { x: target.x, y: target.y }
-      paintStroke(target.cell, [lastPixel.current], erasing)
+      paintStroke(target.cell, [lastPixel.current], (event.buttons & 2) !== 0)
     },
     [toCellAndPixel, scrollRef],
   )
@@ -147,7 +146,7 @@ export function usePixelPointer(
       paintStroke(
         target.cell,
         points,
-        editorStore.state.tool === 'erase' || (event.buttons & 2) !== 0,
+        (event.buttons & 2) !== 0,
       )
     },
     [toCellAndPixel, scrollRef],

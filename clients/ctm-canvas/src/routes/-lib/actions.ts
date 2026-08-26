@@ -4,8 +4,9 @@ import { extractPalette } from './image'
 import { alphaFromTemplate } from './templates'
 import { editorStore, initialEditorState } from './store'
 import { USED_CELLS } from './sheet'
-import type { LayerOption } from './store'
+import type { ActiveLayer, LayerOption } from './store'
 import type { Tool } from './store'
+import type { ViewMode } from './store'
 
 export type Point = { x: number; y: number }
 
@@ -46,7 +47,6 @@ function bumpRevision(): void {
     revision: state.revision + 1,
   }))
 }
-
 /**
  * Initialise a new document from the uploaded sprite and an optional template
  * URL. The sprite is copied into base and into all 17 used color cells; the
@@ -113,6 +113,14 @@ export function setTool(tool: Tool): void {
   update({ tool })
 }
 
+export function setActiveLayer(activeLayer: ActiveLayer): void {
+  update({ activeLayer })
+}
+
+export function setViewMode(viewMode: ViewMode): void {
+  update({ viewMode })
+}
+
 export function setActiveCell(activeCell: number): void {
   update({ activeCell })
 }
@@ -148,18 +156,26 @@ export function setExportConfig(config: {
 
 /**
  * Apply a stroke along a dense list of pixel points inside one cell.
- * Paint sets alpha=1 and writes the active color; erase clears alpha.
+ *
+ * On the alpha layer, paint shows pixels (alpha=1) and erase hides them
+ * (alpha=0); colors are never touched. On the color layer, paint writes the
+ * active color and erase restores the base sprite pixel; visibility is never
+ * touched. The right button forces an erase on either layer.
  */
 export function paintStroke(
   cell: number,
   points: Point[],
-  erase: boolean,
+  forceErase = false,
 ): void {
-  const { tileSize, alpha, color, activeColor } = requireSheets()
+  const state = requireSheets()
   if (points.length === 0 || cell < 0 || cell >= USED_CELLS) {
     return
   }
-  const rgb = hexToRgb(activeColor) ?? { r: 255, g: 255, b: 255 }
+  const { tileSize } = state
+  const editorState = editorStore.state
+  const erasing = forceErase === true || editorState.tool === 'erase'
+  const onAlphaLayer = editorState.activeLayer === 'alpha'
+  const rgb = hexToRgb(editorState.activeColor) ?? { r: 255, g: 255, b: 255 }
 
   for (const point of points) {
     if (
@@ -171,18 +187,42 @@ export function paintStroke(
       continue
     }
     const pixel = cell * tileSize * tileSize + point.y * tileSize + point.x
-    if (erase) {
-      alpha[pixel] = 0
-    } else {
-      alpha[pixel] = 1
-      const source = pixel * 4
-      color[source] = rgb.r
-      color[source + 1] = rgb.g
-      color[source + 2] = rgb.b
-      color[source + 3] = 255
+    if (onAlphaLayer) {
+      alphaVisibility(state, pixel, erasing)
+      continue
     }
+    applyColorStroke(state, pixel, erasing, rgb)
   }
   bumpRevision()
+}
+
+function alphaVisibility(
+  sheets: LoadedSheets,
+  pixel: number,
+  erasing: boolean,
+): void {
+  sheets.alpha[pixel] = erasing ? 0 : 1
+}
+
+function applyColorStroke(
+  sheets: LoadedSheets,
+  pixel: number,
+  erasing: boolean,
+  rgb: { r: number; g: number; b: number },
+): void {
+  const target = pixel * 4
+  if (erasing) {
+    // Restore the base sprite colour for this pixel.
+    sheets.color[target] = sheets.base[target]
+    sheets.color[target + 1] = sheets.base[target + 1]
+    sheets.color[target + 2] = sheets.base[target + 2]
+    sheets.color[target + 3] = 255
+    return
+  }
+  sheets.color[target] = rgb.r
+  sheets.color[target + 1] = rgb.g
+  sheets.color[target + 2] = rgb.b
+  sheets.color[target + 3] = 255
 }
 
 /** Sample the composited color at a pixel and make it the active palette slot. */
