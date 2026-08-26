@@ -22,6 +22,7 @@ export function EditorPixelCanvas() {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const handlers = usePixelPointer(canvasRef, scrollRef)
   const viewMode = useEditor((state) => state.viewMode)
+  const maskHighlight = useEditor((state) => state.maskHighlight)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -40,6 +41,8 @@ export function EditorPixelCanvas() {
     }
 
     const mode = state.viewMode
+    const dimUnmasked =
+      state.maskHighlight === true && mode !== 'alpha'
     const tileImage = context.createImageData(tileSize, tileSize)
     const pixels = tileSize * tileSize
     for (let cell = 0; cell < USED_CELLS; cell++) {
@@ -57,22 +60,30 @@ export function EditorPixelCanvas() {
           continue
         }
         // Base texture sits underneath in both other views.
-        tileImage.data[target] = base[target]
-        tileImage.data[target + 1] = base[target + 1]
-        tileImage.data[target + 2] = base[target + 2]
-        tileImage.data[target + 3] = 255
+        let r = base[target]
+        let g = base[target + 1]
+        let b = base[target + 2]
         if (mode === 'color' || alpha[cellBase + i] === 1) {
           const source = (cellBase + i) * 4
-          tileImage.data[target] = color[source]
-          tileImage.data[target + 1] = color[source + 1]
-          tileImage.data[target + 2] = color[source + 2]
-          tileImage.data[target + 3] = 255
+          r = color[source]
+          g = color[source + 1]
+          b = color[source + 2]
         }
+        if (dimUnmasked && alpha[cellBase + i] !== 1) {
+          // Dim everything outside the mask so the overlay region pops.
+          r = Math.round(r * 0.35)
+          g = Math.round(g * 0.35)
+          b = Math.round(b * 0.35)
+        }
+        tileImage.data[target] = r
+        tileImage.data[target + 1] = g
+        tileImage.data[target + 2] = b
+        tileImage.data[target + 3] = 255
       }
       context.putImageData(tileImage, origin.x, origin.y)
     }
     void revision
-  }, [tileSize, revision, viewMode])
+  }, [tileSize, revision, viewMode, maskHighlight])
 
   useEffect(() => {
     const canvas = guideCanvasRef.current
@@ -101,42 +112,47 @@ export function EditorPixelCanvas() {
       context.stroke()
     }
 
-    // Connection guides: accent edge lines for connected sides, dots for
-    // connected corners.
-    const edge = Math.max(1, Math.round(tileSize / 16)) * 2
-    context.strokeStyle = 'rgba(56, 189, 248, 0.55)'
-    context.fillStyle = 'rgba(56, 189, 248, 0.7)'
+    // Connection guides: faint dashed lines along connected sides, tiny
+    // squares in connected corners.
+    context.strokeStyle = 'rgba(56, 189, 248, 0.35)'
+    context.fillStyle = 'rgba(56, 189, 248, 0.45)'
+    context.lineWidth = 1
+    context.setLineDash([2, 3])
+    const inset = 1.5
+    const tick = Math.max(2, Math.round(tileSize / 8))
     for (let cell = 0; cell < USED_CELLS; cell++) {
       const origin = cellOffsetPx(cell, tileSize)
       const tile = tiles[cell]
       for (const side of tile.sides) {
         context.beginPath()
         if (side === 'top') {
-          context.rect(origin.x, origin.y, tileSize, edge)
+          context.moveTo(origin.x + inset, origin.y + inset)
+          context.lineTo(origin.x + tileSize - inset, origin.y + inset)
         } else if (side === 'bottom') {
-          context.rect(origin.x, origin.y + tileSize - edge, tileSize, edge)
+          context.moveTo(origin.x + inset, origin.y + tileSize - inset)
+          context.lineTo(origin.x + tileSize - inset, origin.y + tileSize - inset)
         } else if (side === 'left') {
-          context.rect(origin.x, origin.y, edge, tileSize)
+          context.moveTo(origin.x + inset, origin.y + inset)
+          context.lineTo(origin.x + inset, origin.y + tileSize - inset)
         } else {
-          context.rect(origin.x + tileSize - edge, origin.y, edge, tileSize)
+          context.moveTo(origin.x + tileSize - inset, origin.y + inset)
+          context.lineTo(origin.x + tileSize - inset, origin.y + tileSize - inset)
         }
-        context.fill()
+        context.stroke()
       }
-      const dot = Math.max(2, tileSize / 8)
       for (const corner of tile.corners) {
-        let cx = origin.x
-        let cy = origin.y
+        let cx = origin.x + inset
+        let cy = origin.y + inset
         if (corner.endsWith('right')) {
-          cx = origin.x + tileSize - dot
+          cx = origin.x + tileSize - inset - tick
         }
         if (corner.startsWith('bottom')) {
-          cy = origin.y + tileSize - dot
+          cy = origin.y + tileSize - inset - tick
         }
-        context.beginPath()
-        context.arc(cx + dot / 2, cy + dot / 2, dot / 2, 0, Math.PI * 2)
-        context.fill()
+        context.fillRect(cx, cy, tick, tick)
       }
     }
+    context.setLineDash([])
 
     // Active cell highlight.
     const origin = cellOffsetPx(activeCell, tileSize)

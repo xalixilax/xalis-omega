@@ -28,6 +28,8 @@ export type EditorState = {
   tool: Tool
   activeLayer: ActiveLayer
   viewMode: ViewMode
+  /** Dim pixels outside the alpha mask so the overlay region stays readable. */
+  maskHighlight: boolean
   matchBlocks: string
   connectBlocks: string
   startIndex: number
@@ -47,6 +49,7 @@ export const initialEditorState: EditorState = {
   tool: 'paint',
   activeLayer: 'alpha',
   viewMode: 'result',
+  maskHighlight: true,
   matchBlocks: '',
   connectBlocks: '',
   startIndex: 0,

@@ -121,6 +121,10 @@ export function setViewMode(viewMode: ViewMode): void {
   update({ viewMode })
 }
 
+export function setMaskHighlight(maskHighlight: boolean): void {
+  update({ maskHighlight })
+}
+
 export function setActiveCell(activeCell: number): void {
   update({ activeCell })
 }

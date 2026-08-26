@@ -212,5 +212,10 @@ Deviations from the sections above:
   palette colour and erase restores the base sprite pixel (visibility
   untouched). Right-click forces an erase on either layer.
 - The palette is disabled while the alpha layer is selected.
+- **Mask highlight** — in Result and Color views, pixels outside the alpha
+  mask are dimmed to 35% brightness so the overlay region stays readable even
+  when overlay colours match the base sprite. A "Dim unmasked" toolbar toggle
+  turns this off. Connection guides are faint dashed lines (1px) instead of
+  filled strips so adjacent cells no longer merge into solid bands.
 
 ```

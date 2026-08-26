@@ -1,5 +1,17 @@
-import { Eraser, Hand, Paintbrush, Pipette } from 'lucide-react'
-import { setActiveLayer, setTool, setViewMode } from '../-lib/actions'
+import {
+  Eraser,
+  Eye,
+  EyeOff,
+  Hand,
+  Paintbrush,
+  Pipette,
+} from 'lucide-react'
+import {
+  setActiveLayer,
+  setMaskHighlight,
+  setTool,
+  setViewMode,
+} from '../-lib/actions'
 import { useEditor } from '../-hooks/use-editor-store'
 import type { ActiveLayer, Tool, ViewMode } from '../-lib/store'
 
@@ -25,6 +37,7 @@ export function EditorToolbar() {
   const tool = useEditor((state) => state.tool)
   const activeLayer = useEditor((state) => state.activeLayer)
   const viewMode = useEditor((state) => state.viewMode)
+  const maskHighlight = useEditor((state) => state.maskHighlight)
 
   return (
     <div className="flex flex-col gap-2">
@@ -90,6 +103,21 @@ export function EditorToolbar() {
             </button>
           ))}
         </div>
+
+        <button
+          type="button"
+          onClick={() => setMaskHighlight(!maskHighlight)}
+          aria-pressed={maskHighlight}
+          title="Dim pixels outside the alpha mask in Result and Color views"
+          className={`ml-3 flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm ${
+            maskHighlight
+              ? 'border-zinc-500 bg-zinc-800 text-zinc-100'
+              : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-600'
+          }`}
+        >
+          {maskHighlight ? <Eye size={14} /> : <EyeOff size={14} />}
+          Dim unmasked
+        </button>
       </div>
       <p className="text-xs text-zinc-500">
         {activeLayer === 'alpha'

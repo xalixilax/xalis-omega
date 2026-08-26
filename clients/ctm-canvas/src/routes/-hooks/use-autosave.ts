@@ -19,6 +19,7 @@ type SavedState = {
   tool: EditorState['tool']
   activeLayer?: EditorState['activeLayer']
   viewMode?: EditorState['viewMode']
+  maskHighlight?: boolean
   matchBlocks: string
   connectBlocks: string
   startIndex: number
@@ -47,6 +48,7 @@ function serialize(state: EditorState): SavedState | null {
     tool: state.tool,
     activeLayer: state.activeLayer,
     viewMode: state.viewMode,
+    maskHighlight: state.maskHighlight,
     matchBlocks: state.matchBlocks,
     connectBlocks: state.connectBlocks,
     startIndex: state.startIndex,
@@ -95,6 +97,7 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
         saved.viewMode === 'alpha'
           ? saved.viewMode
           : 'result',
+      maskHighlight: saved.maskHighlight !== false,
       matchBlocks: saved.matchBlocks,
       connectBlocks: saved.connectBlocks,
       startIndex: saved.startIndex,
