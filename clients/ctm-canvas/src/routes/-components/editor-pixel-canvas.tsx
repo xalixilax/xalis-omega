@@ -7,22 +7,23 @@ import { tiles } from '../-lib/tiles'
 
 /**
  * Left editor canvas: the full 7x3 sheet at native resolution, scaled up with
- * nearest-neighbour rendering. Base texture sits underneath, color pixels are
- * shown where the binary alpha mask is 1. Guide markers live on a separate
- * canvas so they never reach the export.
+ * nearest-neighbour rendering. The underlay texture (custom background or the
+ * sprite) sits underneath; overlay pixels show where the binary mask is 1.
+ * Guide markers live on a separate canvas so they never reach the export, and
+ * a crisp SVG line grid marks the tile boundaries.
  */
 export function EditorPixelCanvas() {
   const tileSize = useEditor((state) => state.tileSize)
   const revision = useEditor((state) => state.revision)
-  const activeCell = useEditor((state) => state.activeCell)
   const tool = useEditor((state) => state.tool)
+  const viewMode = useEditor((state) => state.viewMode)
+  const maskDim = useEditor((state) => state.maskDim)
+  const overlayVisible = useEditor((state) => state.overlayVisible)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const guideCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const handlers = usePixelPointer(canvasRef, scrollRef)
-  const viewMode = useEditor((state) => state.viewMode)
-  const maskHighlight = useEditor((state) => state.maskHighlight)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -41,8 +42,9 @@ export function EditorPixelCanvas() {
     }
 
     const mode = state.viewMode
-    const dimUnmasked =
-      state.maskHighlight === true && mode !== 'alpha'
+    const underlay = state.background ?? base
+    const dimFactor =
+      mode === 'result' && state.overlayVisible ? 1 - state.maskDim / 100 : 1
     const tileImage = context.createImageData(tileSize, tileSize)
     const pixels = tileSize * tileSize
     for (let cell = 0; cell < USED_CELLS; cell++) {
@@ -59,21 +61,25 @@ export function EditorPixelCanvas() {
           tileImage.data[target + 3] = 255
           continue
         }
-        // Base texture sits underneath in both other views.
-        let r = base[target]
-        let g = base[target + 1]
-        let b = base[target + 2]
-        if (mode === 'color' || alpha[cellBase + i] === 1) {
+        let r = underlay[target]
+        let g = underlay[target + 1]
+        let b = underlay[target + 2]
+        if (
+          mode === 'result' &&
+          !state.overlayVisible
+        ) {
+          // Overlay hidden: pure underlay for comparison.
+        } else if (alpha[cellBase + i] === 1) {
           const source = (cellBase + i) * 4
           r = color[source]
           g = color[source + 1]
           b = color[source + 2]
         }
-        if (dimUnmasked && alpha[cellBase + i] !== 1) {
+        if (dimFactor < 1 && alpha[cellBase + i] !== 1) {
           // Dim everything outside the mask so the overlay region pops.
-          r = Math.round(r * 0.35)
-          g = Math.round(g * 0.35)
-          b = Math.round(b * 0.35)
+          r = Math.round(r * dimFactor)
+          g = Math.round(g * dimFactor)
+          b = Math.round(b * dimFactor)
         }
         tileImage.data[target] = r
         tileImage.data[target + 1] = g
@@ -83,7 +89,7 @@ export function EditorPixelCanvas() {
       context.putImageData(tileImage, origin.x, origin.y)
     }
     void revision
-  }, [tileSize, revision, viewMode, maskHighlight])
+  }, [tileSize, revision, viewMode, maskDim, overlayVisible])
 
   useEffect(() => {
     const canvas = guideCanvasRef.current
@@ -95,22 +101,6 @@ export function EditorPixelCanvas() {
       return
     }
     context.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Cell boundaries.
-    context.strokeStyle = 'rgba(255, 255, 255, 0.14)'
-    context.lineWidth = 1
-    for (let col = 1; col < GRID_COLS; col++) {
-      context.beginPath()
-      context.moveTo(col * tileSize + 0.5, 0)
-      context.lineTo(col * tileSize + 0.5, canvas.height)
-      context.stroke()
-    }
-    for (let row = 1; row < GRID_ROWS; row++) {
-      context.beginPath()
-      context.moveTo(0, row * tileSize + 0.5)
-      context.lineTo(canvas.width, row * tileSize + 0.5)
-      context.stroke()
-    }
 
     // Connection guides: faint dashed lines along connected sides, tiny
     // squares in connected corners.
@@ -130,13 +120,19 @@ export function EditorPixelCanvas() {
           context.lineTo(origin.x + tileSize - inset, origin.y + inset)
         } else if (side === 'bottom') {
           context.moveTo(origin.x + inset, origin.y + tileSize - inset)
-          context.lineTo(origin.x + tileSize - inset, origin.y + tileSize - inset)
+          context.lineTo(
+            origin.x + tileSize - inset,
+            origin.y + tileSize - inset,
+          )
         } else if (side === 'left') {
           context.moveTo(origin.x + inset, origin.y + inset)
           context.lineTo(origin.x + inset, origin.y + tileSize - inset)
         } else {
           context.moveTo(origin.x + tileSize - inset, origin.y + inset)
-          context.lineTo(origin.x + tileSize - inset, origin.y + tileSize - inset)
+          context.lineTo(
+            origin.x + tileSize - inset,
+            origin.y + tileSize - inset,
+          )
         }
         context.stroke()
       }
@@ -153,13 +149,7 @@ export function EditorPixelCanvas() {
       }
     }
     context.setLineDash([])
-
-    // Active cell highlight.
-    const origin = cellOffsetPx(activeCell, tileSize)
-    context.strokeStyle = '#f59e0b'
-    context.lineWidth = Math.max(1, tileSize / 16)
-    context.strokeRect(origin.x + 0.5, origin.y + 0.5, tileSize - 1, tileSize - 1)
-  }, [tileSize, activeCell, revision])
+  }, [tileSize])
 
   if (tileSize === null) {
     return null
@@ -171,7 +161,7 @@ export function EditorPixelCanvas() {
   return (
     <div
       ref={scrollRef}
-      className="checkerboard overflow-auto rounded-md border border-zinc-800 p-2"
+      className="overflow-auto rounded-md border border-zinc-800 bg-zinc-900 p-2"
     >
       <div
         className="relative mx-auto"
@@ -195,6 +185,37 @@ export function EditorPixelCanvas() {
           height={height}
           className="pixelated pointer-events-none absolute inset-0 h-full w-full"
         />
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox={`0 0 ${GRID_COLS} ${GRID_ROWS}`}
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          {Array.from({ length: GRID_COLS - 1 }, (_, index) => (
+            <line
+              key={`v-${index}`}
+              x1={index + 1}
+              y1={0}
+              x2={index + 1}
+              y2={GRID_ROWS}
+              stroke="#3f3f46"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+          {Array.from({ length: GRID_ROWS - 1 }, (_, index) => (
+            <line
+              key={`h-${index}`}
+              x1={0}
+              y1={index + 1}
+              x2={GRID_COLS}
+              y2={index + 1}
+              stroke="#3f3f46"
+              strokeWidth={1}
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
       </div>
     </div>
   )

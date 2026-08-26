@@ -76,14 +76,14 @@ describe('strokes on the alpha layer', () => {
 })
 
 describe('strokes on the color layer', () => {
-  it('paint applies the active colour independently of alpha', () => {
+  it('paint applies the active colour and reveals the pixel', () => {
     setActiveLayer('color')
     setActiveColor('#ff0000')
     setTool('paint')
     paintStroke(0, [{ x: 0, y: 0 }])
 
     expect(colorAt(0, 0, 0)).toEqual([255, 0, 0])
-    expect(alphaAt(0, 0, 0)).toBe(0)
+    expect(alphaAt(0, 0, 0)).toBe(1)
   })
 
   it('erase restores the base sprite pixel without touching alpha', () => {
@@ -92,19 +92,24 @@ describe('strokes on the color layer', () => {
     setTool('paint')
     paintStroke(0, [{ x: 1, y: 1 }])
     expect(colorAt(0, 1, 1)).toEqual([255, 0, 0])
+    expect(alphaAt(0, 1, 1)).toBe(1)
 
     setTool('erase')
     paintStroke(0, [{ x: 1, y: 1 }])
     expect(colorAt(0, 1, 1)).toEqual([100, 110, 120])
-    expect(editorStore.state.alpha![0]).toBe(0)
+    // Visibility is governed by the alpha layer only.
+    expect(alphaAt(0, 1, 1)).toBe(1)
   })
 
   it('right-button forces an erase even with the paint tool', () => {
     setActiveLayer('color')
     setActiveColor('#ff0000')
     setTool('paint')
+    // Pixel (0,1) is visible before the forced erase.
+    editorStore.state.alpha![0 * PIXELS + 1 * N + 0] = 1
     paintStroke(0, [{ x: 0, y: 1 }], true)
 
     expect(colorAt(0, 0, 1)).toEqual([70, 80, 90])
+    expect(alphaAt(0, 0, 1)).toBe(1)
   })
 })

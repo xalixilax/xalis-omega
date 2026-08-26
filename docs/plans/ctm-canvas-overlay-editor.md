@@ -218,4 +218,23 @@ Deviations from the sections above:
   turns this off. Connection guides are faint dashed lines (1px) instead of
   filled strips so adjacent cells no longer merge into solid bands.
 
+## Feedback round 3
+
+- **Overlay toggle** — an "Overlay" checkbox shows/hides the composite in
+  Result view for A/B comparison against the pure base texture.
+- **Dim slider** — the mask dimming is a 0-100% slider (`maskDim`), not a
+  toggle.
+- **Background asset** — an optional same-size square texture used as the
+  underlay behind the overlay in the editor and all previews (set from the
+  uploader form or the toolbar "Background..." picker; clearable).
+- **Color reveals pixels** — a colour stroke on the color layer writes the
+  colour AND sets alpha=1, so strokes always show in Result view and always
+  reach the export. Alpha erase remains the only way to hide pixels.
+- **Chrome** — the amber active-cell border is gone; tile separation is a
+  crisp 1px SVG line grid (`vector-effect: non-scaling-stroke`); the
+  checkerboard backdrop was removed.
+- **Stroke fix** — dragging across a cell boundary starts a fresh stroke
+  segment instead of smearing a line across the new cell.
+
+
 ```

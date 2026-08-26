@@ -43,6 +43,7 @@ export function usePixelPointer(
   scrollRef: RefObject<HTMLElement | null>,
 ) {
   const lastPixel = useRef<PixelPoint | null>(null)
+  const lastCell = useRef<number | null>(null)
   const panning = useRef<{
     pointerX: number
     pointerY: number
@@ -109,6 +110,7 @@ export function usePixelPointer(
         return
       }
       lastPixel.current = { x: target.x, y: target.y }
+      lastCell.current = target.cell
       paintStroke(target.cell, [lastPixel.current], (event.buttons & 2) !== 0)
     },
     [toCellAndPixel, scrollRef],
@@ -129,20 +131,28 @@ export function usePixelPointer(
       }
       if ((event.buttons & 3) === 0) {
         lastPixel.current = null
+        lastCell.current = null
         return
       }
       const target = toCellAndPixel(event)
       if (!target) {
         lastPixel.current = null
+        lastCell.current = null
         return
       }
       const current = { x: target.x, y: target.y }
-      const from = lastPixel.current ?? current
+      // Entering another tile starts a fresh stroke segment: interpolating
+      // from the previous tile's pixel coordinates would smear a line across
+      // the whole new tile.
+      const last = lastPixel.current
+      const sameCell = last !== null && lastCell.current === target.cell
+      const from = sameCell ? last : current
       const points =
         from.x === current.x && from.y === current.y
           ? [current]
           : linePoints(from, current)
       lastPixel.current = current
+      lastCell.current = target.cell
       paintStroke(
         target.cell,
         points,
@@ -154,6 +164,7 @@ export function usePixelPointer(
 
   const onPointerUp = useCallback(() => {
     lastPixel.current = null
+    lastCell.current = null
     panning.current = null
   }, [])
 

@@ -28,8 +28,12 @@ export type EditorState = {
   tool: Tool
   activeLayer: ActiveLayer
   viewMode: ViewMode
-  /** Dim pixels outside the alpha mask so the overlay region stays readable. */
-  maskHighlight: boolean
+  /** Show the overlay composite in Result view; off = pure base texture. */
+  overlayVisible: boolean
+  /** Percent of darkness applied to pixels outside the alpha mask (0-100). */
+  maskDim: number
+  /** Optional underlay texture (N*N*4) shown behind the overlay. */
+  background: Uint8ClampedArray | null
   matchBlocks: string
   connectBlocks: string
   startIndex: number
@@ -49,7 +53,9 @@ export const initialEditorState: EditorState = {
   tool: 'paint',
   activeLayer: 'alpha',
   viewMode: 'result',
-  maskHighlight: true,
+  overlayVisible: true,
+  maskDim: 65,
+  background: null,
   matchBlocks: '',
   connectBlocks: '',
   startIndex: 0,

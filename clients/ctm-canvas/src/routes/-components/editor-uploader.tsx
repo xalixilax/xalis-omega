@@ -11,6 +11,7 @@ export function EditorUploader() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const backgroundInputRef = useRef<HTMLInputElement | null>(null)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -21,13 +22,14 @@ export function EditorUploader() {
       setError('Pick a square PNG texture first.')
       return
     }
+    const backgroundFile = backgroundInputRef.current?.files?.[0] ?? null
     setBusy(true)
     setError(null)
     try {
       const templateUrl =
         alphaTemplates.find((template) => template.id === templateId)?.url ??
         null
-      await initDocument(file, templateUrl, file.name)
+      await initDocument(file, templateUrl, file.name, backgroundFile)
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Could not load the image.',
@@ -36,7 +38,6 @@ export function EditorUploader() {
       setBusy(false)
     }
   }
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -75,6 +76,20 @@ export function EditorUploader() {
             </option>
           ))}
         </select>
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span>
+          Background texture{' '}
+          <span className="text-zinc-500">(optional, same size)</span>
+        </span>
+        <input
+          ref={backgroundInputRef}
+          type="file"
+          accept="image/png"
+          name="background"
+          className="rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-zinc-800 file:px-3 file:py-1 file:text-zinc-100"
+        />
       </label>
 
       {error !== null && (

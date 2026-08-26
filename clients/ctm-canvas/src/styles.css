@@ -3,14 +3,3 @@
 .pixelated {
   image-rendering: pixelated;
 }
-
-.checkerboard {
-  background-image:
-    conic-gradient(
-      #3f3f46 25%,
-      #18181b 0 50%,
-      #3f3f46 0 75%,
-      #18181b 0
-    );
-  background-size: 16px 16px;
-}

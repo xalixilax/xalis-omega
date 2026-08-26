@@ -108,7 +108,9 @@ export function encodePng(image: ImageData): Promise<Blob> {
   return canvasToBlob(ctx.canvas as OffscreenCanvas | HTMLCanvasElement)
 }
 
-export function bytesToBase64(bytes: Uint8Array): string {
+export function bytesToBase64(
+  bytes: Uint8Array | Uint8ClampedArray,
+): string {
   let binary = ''
   const chunkSize = 0x8000
   for (let i = 0; i < bytes.length; i += chunkSize) {

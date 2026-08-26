@@ -19,7 +19,9 @@ type SavedState = {
   tool: EditorState['tool']
   activeLayer?: EditorState['activeLayer']
   viewMode?: EditorState['viewMode']
-  maskHighlight?: boolean
+  overlayVisible?: boolean
+  maskDim?: number
+  backgroundB64?: string | null
   matchBlocks: string
   connectBlocks: string
   startIndex: number
@@ -48,7 +50,10 @@ function serialize(state: EditorState): SavedState | null {
     tool: state.tool,
     activeLayer: state.activeLayer,
     viewMode: state.viewMode,
-    maskHighlight: state.maskHighlight,
+    overlayVisible: state.overlayVisible,
+    maskDim: state.maskDim,
+    backgroundB64:
+      state.background === null ? null : bytesToBase64(state.background),
     matchBlocks: state.matchBlocks,
     connectBlocks: state.connectBlocks,
     startIndex: state.startIndex,
@@ -69,10 +74,15 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
     const base = base64ToBytes(saved.baseB64)
     const alpha = base64ToBytes(saved.alphaB64)
     const color = base64ToBytes(saved.colorB64)
+    const background =
+      typeof saved.backgroundB64 === 'string'
+        ? base64ToBytes(saved.backgroundB64)
+        : null
     if (
       base.length !== pixels * 4 ||
       alpha.length !== USED_CELLS * pixels ||
-      color.length !== USED_CELLS * pixels * 4
+      color.length !== USED_CELLS * pixels * 4 ||
+      (background !== null && background.length !== pixels * 4)
     ) {
       return null
     }
@@ -83,6 +93,14 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
       base: new Uint8ClampedArray(base.buffer, base.byteOffset, base.length),
       alpha,
       color,
+      background:
+        background === null
+          ? null
+          : new Uint8ClampedArray(
+              background.buffer,
+              background.byteOffset,
+              background.length,
+            ),
       palette: Array.isArray(saved.palette) ? saved.palette : [],
       activeColor: saved.activeColor,
       activeCell: Math.min(Math.max(0, saved.activeCell), USED_CELLS - 1),
@@ -97,7 +115,11 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
         saved.viewMode === 'alpha'
           ? saved.viewMode
           : 'result',
-      maskHighlight: saved.maskHighlight !== false,
+      overlayVisible: saved.overlayVisible !== false,
+      maskDim:
+        typeof saved.maskDim === 'number' && Number.isFinite(saved.maskDim)
+          ? Math.min(100, Math.max(0, Math.round(saved.maskDim)))
+          : 65,
       matchBlocks: saved.matchBlocks,
       connectBlocks: saved.connectBlocks,
       startIndex: saved.startIndex,

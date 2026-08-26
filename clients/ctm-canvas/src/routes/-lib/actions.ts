@@ -56,6 +56,7 @@ export async function initDocument(
   spriteBlob: Blob,
   templateUrl: string | null,
   baseName: string,
+  backgroundBlob: Blob | null = null,
 ): Promise<void> {
   const spriteImage = await decodeImageFromBlob(spriteBlob)
   const error = validateSprite(spriteImage)
@@ -65,6 +66,21 @@ export async function initDocument(
 
   const n = spriteImage.width
   const pixels = n * n
+
+  let background: Uint8ClampedArray | null = null
+  if (backgroundBlob !== null) {
+    const backgroundImage = await decodeImageFromBlob(backgroundBlob)
+    const backgroundError = validateSprite(backgroundImage)
+    if (backgroundError !== null) {
+      throw new Error(`Background texture: ${backgroundError}`)
+    }
+    if (backgroundImage.width !== n) {
+      throw new Error(
+        `Background must be ${n}x${n} to match the sprite.`,
+      )
+    }
+    background = new Uint8ClampedArray(backgroundImage.data)
+  }
 
   const base = new Uint8ClampedArray(spriteImage.data)
   const color = new Uint8Array(USED_CELLS * pixels * 4)
@@ -88,6 +104,7 @@ export async function initDocument(
     base,
     alpha,
     color,
+    background,
     palette: palette.length > 0 ? palette : ['#ffffff'],
     activeColor: palette[0] ?? '#ffffff',
     activeCell: 0,
@@ -121,8 +138,34 @@ export function setViewMode(viewMode: ViewMode): void {
   update({ viewMode })
 }
 
-export function setMaskHighlight(maskHighlight: boolean): void {
-  update({ maskHighlight })
+export function setOverlayVisible(overlayVisible: boolean): void {
+  update({ overlayVisible })
+}
+
+export function setMaskDim(maskDim: number): void {
+  update({ maskDim: Math.min(100, Math.max(0, Math.round(maskDim))) })
+}
+
+/** Set or clear the optional underlay texture used by editor and previews. */
+export async function setBackground(backgroundBlob: Blob | null): Promise<void> {
+  if (backgroundBlob === null) {
+    update({ background: null })
+    bumpRevision()
+    return
+  }
+  const { tileSize } = requireSheets()
+  const image = await decodeImageFromBlob(backgroundBlob)
+  const error = validateSprite(image)
+  if (error !== null) {
+    throw new Error(error)
+  }
+  if (image.width !== tileSize) {
+    throw new Error(
+      `Background must be ${tileSize}x${tileSize} to match the sprite.`,
+    )
+  }
+  update({ background: new Uint8ClampedArray(image.data) })
+  bumpRevision()
 }
 
 export function setActiveCell(activeCell: number): void {
@@ -163,8 +206,10 @@ export function setExportConfig(config: {
  *
  * On the alpha layer, paint shows pixels (alpha=1) and erase hides them
  * (alpha=0); colors are never touched. On the color layer, paint writes the
- * active color and erase restores the base sprite pixel; visibility is never
- * touched. The right button forces an erase on either layer.
+ * active colour AND reveals the pixel so the stroke is always visible in the
+ * Result view and present in the export; erase restores the base sprite pixel
+ * without touching visibility. The right button forces an erase on either
+ * layer.
  */
 export function paintStroke(
   cell: number,
@@ -192,20 +237,12 @@ export function paintStroke(
     }
     const pixel = cell * tileSize * tileSize + point.y * tileSize + point.x
     if (onAlphaLayer) {
-      alphaVisibility(state, pixel, erasing)
+      state.alpha[pixel] = erasing ? 0 : 1
       continue
     }
     applyColorStroke(state, pixel, erasing, rgb)
   }
   bumpRevision()
-}
-
-function alphaVisibility(
-  sheets: LoadedSheets,
-  pixel: number,
-  erasing: boolean,
-): void {
-  sheets.alpha[pixel] = erasing ? 0 : 1
 }
 
 function applyColorStroke(
@@ -216,7 +253,7 @@ function applyColorStroke(
 ): void {
   const target = pixel * 4
   if (erasing) {
-    // Restore the base sprite colour for this pixel.
+    // Restore the base sprite colour; visibility stays as-is.
     sheets.color[target] = sheets.base[target]
     sheets.color[target + 1] = sheets.base[target + 1]
     sheets.color[target + 2] = sheets.base[target + 2]
@@ -227,6 +264,8 @@ function applyColorStroke(
   sheets.color[target + 1] = rgb.g
   sheets.color[target + 2] = rgb.b
   sheets.color[target + 3] = 255
+  // A colour stroke always reveals its pixel.
+  sheets.alpha[pixel] = 1
 }
 
 /** Sample the composited color at a pixel and make it the active palette slot. */

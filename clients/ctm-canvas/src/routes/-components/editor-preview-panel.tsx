@@ -66,10 +66,11 @@ function MiniField({ index, tileSize, revision, active }: MiniFieldProps) {
     if (context === null) {
       return
     }
-    const { base, alpha, color } = editorStore.state
+    const { base, alpha, color, background } = editorStore.state
     if (base === null || alpha === null || color === null) {
       return
     }
+    const underlay = background ?? base
 
     const size = tileSize * 3
     context.clearRect(0, 0, size, size)
@@ -82,9 +83,16 @@ function MiniField({ index, tileSize, revision, active }: MiniFieldProps) {
         continue
       }
       const [col, row] = NEIGHBOR_OFFSETS[key]
-      drawBase(context, col * tileSize, row * tileSize, base, tileSize)
+      drawBase(context, col * tileSize, row * tileSize, underlay, tileSize)
     }
-    drawCompositedCenter(context, tileSize, index, alpha, color, base)
+    drawCompositedCenter(
+      context,
+      tileSize,
+      index,
+      alpha,
+      color,
+      underlay,
+    )
     void revision
   }, [tileSize, revision, index])
 
