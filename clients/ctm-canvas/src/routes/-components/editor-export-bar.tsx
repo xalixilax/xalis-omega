@@ -1,8 +1,9 @@
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, ImageOff } from 'lucide-react'
 import { setExportConfig } from '../-lib/actions'
 import { useEditor } from '../-hooks/use-editor-store'
 import {
   buildProperties,
+  composeAlphaSheet,
   composeOverlaySheet,
   downloadBlob,
   downloadText,
@@ -14,9 +15,10 @@ import type { LayerOption } from '../-lib/store'
 
 const LAYERS: LayerOption[] = ['cutout_mipped', 'cutout', 'translucent']
 
-/** Export bar: PNG sheet + `.properties` form. */
+/** Export bar: result PNG + alpha PNG + `.properties` form. */
 export function EditorExportBar() {
   const tileSize = useEditor((state) => state.tileSize)
+  const base = useEditor((state) => state.base)
   const alpha = useEditor((state) => state.alpha)
   const color = useEditor((state) => state.color)
   const baseName = useEditor((state) => state.baseName)
@@ -26,12 +28,21 @@ export function EditorExportBar() {
   const layer = useEditor((state) => state.layer)
 
   async function handleDownloadPng() {
+    if (tileSize === null || base === null || alpha === null || color === null) {
+      return
+    }
+    const sheet = composeOverlaySheet(tileSize, base, color, alpha)
+    const blob = await encodePng(sheetToImageData(sheet))
+    downloadBlob(`${baseName}.png`, blob)
+  }
+
+  async function handleDownloadAlphaPng() {
     if (tileSize === null || alpha === null || color === null) {
       return
     }
-    const sheet = composeOverlaySheet(tileSize, color, alpha)
+    const sheet = composeAlphaSheet(tileSize, color, alpha)
     const blob = await encodePng(sheetToImageData(sheet))
-    downloadBlob(`${baseName}.png`, blob)
+    downloadBlob(`${baseName}_alpha.png`, blob)
   }
 
   function handleDownloadProperties() {
@@ -99,10 +110,21 @@ export function EditorExportBar() {
           type="button"
           onClick={handleDownloadPng}
           disabled={tileSize === null}
+          title="Final result: base with alpha applied, hand-painted colours on top"
           className="flex items-center gap-1.5 rounded bg-sky-600 px-3 py-1.5 text-sm font-medium hover:bg-sky-500 disabled:opacity-50"
         >
           <Download size={14} />
           PNG
+        </button>
+        <button
+          type="button"
+          onClick={handleDownloadAlphaPng}
+          disabled={tileSize === null}
+          title="Black/white alpha: mask plus hand-painted pixels as white"
+          className="flex items-center gap-1.5 rounded bg-zinc-600 px-3 py-1.5 text-sm font-medium hover:bg-zinc-500 disabled:opacity-50"
+        >
+          <ImageOff size={14} />
+          Alpha PNG
         </button>
         <button
           type="button"

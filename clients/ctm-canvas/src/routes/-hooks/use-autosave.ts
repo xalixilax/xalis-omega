@@ -7,10 +7,10 @@ import { editorStore } from '../-lib/store'
 import type { EditorState } from '../-lib/store'
 import { USED_CELLS } from '../-lib/sheet'
 
-const STORAGE_KEY = 'ctm-canvas:v1'
+const STORAGE_KEY = 'ctm-canvas:v2'
 
 type SavedState = {
-  v: 1
+  v: 2
   tileSize: number
   baseName: string
   palette: string[]
@@ -21,7 +21,7 @@ type SavedState = {
   viewMode?: EditorState['viewMode']
   overlayVisible?: boolean
   guidesVisible?: boolean
-  maskDim?: number
+  backgroundOpacity?: number
   backgroundB64?: string | null
   matchBlocks: string
   connectBlocks: string
@@ -42,7 +42,7 @@ function serialize(state: EditorState): SavedState | null {
     return null
   }
   return {
-    v: 1,
+    v: 2,
     tileSize: state.tileSize,
     baseName: state.baseName,
     palette: state.palette,
@@ -53,7 +53,7 @@ function serialize(state: EditorState): SavedState | null {
     viewMode: state.viewMode,
     overlayVisible: state.overlayVisible,
     guidesVisible: state.guidesVisible,
-    maskDim: state.maskDim,
+    backgroundOpacity: state.backgroundOpacity,
     backgroundB64:
       state.background === null ? null : bytesToBase64(state.background),
     matchBlocks: state.matchBlocks,
@@ -119,10 +119,11 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
           : 'result',
       overlayVisible: saved.overlayVisible !== false,
       guidesVisible: saved.guidesVisible === true,
-      maskDim:
-        typeof saved.maskDim === 'number' && Number.isFinite(saved.maskDim)
-          ? Math.min(100, Math.max(0, Math.round(saved.maskDim)))
-          : 65,
+      backgroundOpacity:
+        typeof saved.backgroundOpacity === 'number' &&
+        Number.isFinite(saved.backgroundOpacity)
+          ? Math.min(100, Math.max(0, Math.round(saved.backgroundOpacity)))
+          : 100,
       matchBlocks: saved.matchBlocks,
       connectBlocks: saved.connectBlocks,
       startIndex: saved.startIndex,
@@ -143,7 +144,7 @@ export function useAutosave(): void {
         if (
           typeof parsed === 'object' &&
           parsed !== null &&
-          (parsed as SavedState).v === 1 &&
+          (parsed as SavedState).v === 2 &&
           window.confirm('Restore your previous editing session?')
         ) {
           const restored = deserialize(parsed as SavedState)

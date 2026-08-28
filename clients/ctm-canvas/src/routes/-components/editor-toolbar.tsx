@@ -3,8 +3,9 @@ import { Eraser, Hand, Paintbrush, Pipette, X } from 'lucide-react'
 import {
   setActiveLayer,
   setBackground,
+  setBackgroundOpacity,
+  setBrushSize,
   setGuidesVisible,
-  setMaskDim,
   setOverlayVisible,
   setTool,
   setViewMode,
@@ -32,9 +33,10 @@ const VIEW_MODES: Array<{ id: ViewMode; label: string }> = [
 
 export function EditorToolbar() {
   const tool = useEditor((state) => state.tool)
+  const brushSize = useEditor((state) => state.brushSize)
   const activeLayer = useEditor((state) => state.activeLayer)
   const viewMode = useEditor((state) => state.viewMode)
-  const maskDim = useEditor((state) => state.maskDim)
+  const backgroundOpacity = useEditor((state) => state.backgroundOpacity)
   const overlayVisible = useEditor((state) => state.overlayVisible)
   const guidesVisible = useEditor((state) => state.guidesVisible)
   const hasBackground = useEditor((state) => state.background !== null)
@@ -84,6 +86,23 @@ export function EditorToolbar() {
             {label}
           </button>
         ))}
+
+        <span className="ml-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
+          Brush
+        </span>
+        <input
+          type="range"
+          min={1}
+          max={64}
+          step={1}
+          value={brushSize}
+          onChange={(event) => setBrushSize(Number(event.target.value))}
+          title="Brush size (Ctrl/Cmd + mouse wheel over the canvas)"
+          className="w-24 accent-sky-500"
+        />
+        <span className="w-9 text-xs tabular-nums text-zinc-400">
+          {brushSize} px
+        </span>
 
         <span className="ml-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
           Draw on
@@ -154,23 +173,25 @@ export function EditorToolbar() {
 
         <label
           className={`flex items-center gap-2 ${
-            viewMode === 'alpha' ? 'opacity-40' : ''
+            hasBackground ? '' : 'opacity-40'
           }`}
-          title="Darkness applied to pixels outside the alpha mask"
+          title="Opacity of the background layer used to test overlays"
         >
-          Dim
+          Background
           <input
             type="range"
             min={0}
             max={100}
             step={5}
-            value={maskDim}
-            disabled={viewMode === 'alpha'}
-            onChange={(event) => setMaskDim(Number(event.target.value))}
+            value={backgroundOpacity}
+            disabled={!hasBackground}
+            onChange={(event) =>
+              setBackgroundOpacity(Number(event.target.value))
+            }
             className="w-32 accent-emerald-500"
           />
           <span className="w-9 text-right text-xs tabular-nums text-zinc-400">
-            {maskDim}%
+            {backgroundOpacity}%
           </span>
         </label>
 
@@ -214,9 +235,10 @@ export function EditorToolbar() {
 
         <span className="text-xs text-zinc-500">
           {activeLayer === 'alpha'
-            ? 'Alpha layer: paint shows pixels, erase hides them.'
-            : 'Color layer: paint colours and reveals pixels, erase restores the sprite.'}{' '}
-          Right-click always erases.
+            ? 'Alpha layer: paint shows base pixels, erase hides them.'
+            : 'Color layer: paint hand colours, erase removes them. The alpha mask never applies here.'}{' '}
+          Right-click always erases. Ctrl/Cmd+wheel resizes the brush.
+          Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
         </span>
       </div>
     </div>

@@ -1,14 +1,18 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor } from '../-hooks/use-editor-store'
 import { usePixelPointer } from '../-hooks/use-pixel-pointer'
+import type { PointerTarget } from '../-hooks/use-pixel-pointer'
+import { setBrushSize } from '../-lib/actions'
 import { cellOffsetPx, GRID_COLS, GRID_ROWS, USED_CELLS } from '../-lib/sheet'
 import { editorStore } from '../-lib/store'
 import { tiles } from '../-lib/tiles'
 
 /**
  * Left editor canvas: the full 7x3 sheet at native resolution, scaled up with
- * nearest-neighbour rendering. The underlay texture (custom background or the
- * sprite) sits underneath; overlay pixels show where the binary mask is 1.
+ * nearest-neighbour rendering. Result view composites layer 0 (background at
+ * its opacity), layer 1 (base sprite where the alpha mask is 1) and layer 3
+ * (hand-painted colours, independent of the mask). The Color view shows the
+ * masked base with painted colours on top, the Alpha view shows the raw mask.
  * Guide markers live on a separate canvas so they never reach the export, and
  * a crisp SVG line grid marks the tile boundaries.
  */
@@ -16,15 +20,37 @@ export function EditorPixelCanvas() {
   const tileSize = useEditor((state) => state.tileSize)
   const revision = useEditor((state) => state.revision)
   const tool = useEditor((state) => state.tool)
+  const brushSize = useEditor((state) => state.brushSize)
+  const activeColor = useEditor((state) => state.activeColor)
   const viewMode = useEditor((state) => state.viewMode)
-  const maskDim = useEditor((state) => state.maskDim)
+  const backgroundOpacity = useEditor((state) => state.backgroundOpacity)
   const overlayVisible = useEditor((state) => state.overlayVisible)
   const guidesVisible = useEditor((state) => state.guidesVisible)
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const guideCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
-  const handlers = usePixelPointer(canvasRef, scrollRef)
+  const [hover, setHover] = useState<PointerTarget | null>(null)
+  const handlers = usePixelPointer(canvasRef, scrollRef, setHover)
+
+  // Ctrl/Cmd + wheel resizes the square brush. The native listener must be
+  // non-passive: ctrl+wheel is the browser page-zoom gesture by default.
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (canvas === null) {
+      return
+    }
+    const onWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) {
+        return
+      }
+      event.preventDefault()
+      const direction = event.deltaY < 0 ? 1 : -1
+      setBrushSize(editorStore.state.brushSize + direction)
+    }
+    canvas.addEventListener('wheel', onWheel, { passive: false })
+    return () => canvas.removeEventListener('wheel', onWheel)
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -43,18 +69,20 @@ export function EditorPixelCanvas() {
     }
 
     const mode = state.viewMode
-    const underlay = state.background ?? base
-    const dimFactor =
-      mode === 'result' && state.overlayVisible ? 1 - state.maskDim / 100 : 1
+    const background = state.background
+    const bgAlpha = Math.round((state.backgroundOpacity / 100) * 255)
     const tileImage = context.createImageData(tileSize, tileSize)
     const pixels = tileSize * tileSize
     for (let cell = 0; cell < USED_CELLS; cell++) {
+      // Without a background, pixels that are neither painted nor masked get
+      // no write below, so the reused buffer must start empty each cell.
+      tileImage.data.fill(0)
       const origin = cellOffsetPx(cell, tileSize)
       const cellBase = cell * pixels
       for (let i = 0; i < pixels; i++) {
         const target = i * 4
         if (mode === 'alpha') {
-          // Black/white mask view: white = overlay pixel visible.
+          // Black/white mask view: white = base pixel shown by the mask.
           const visible = alpha[cellBase + i] === 1
           tileImage.data[target] = visible ? 255 : 0
           tileImage.data[target + 1] = visible ? 255 : 0
@@ -62,35 +90,56 @@ export function EditorPixelCanvas() {
           tileImage.data[target + 3] = 255
           continue
         }
-        let r = underlay[target]
-        let g = underlay[target + 1]
-        let b = underlay[target + 2]
-        if (
-          mode === 'result' &&
-          !state.overlayVisible
-        ) {
-          // Overlay hidden: pure underlay for comparison.
+        if (mode === 'result' && !state.overlayVisible) {
+          // Composite hidden: pure underlay for comparison, keeping its own
+          // alpha so transparent pixels do not turn black.
+          const underlay = background ?? base
+          tileImage.data[target] = underlay[target]
+          tileImage.data[target + 1] = underlay[target + 1]
+          tileImage.data[target + 2] = underlay[target + 2]
+          tileImage.data[target + 3] = background === null ? underlay[target + 3] : 255
+          continue
+        }
+        // Result and Color views, bottom to top: (Result only) background at
+        // its opacity, base texture with the alpha mask applied, hand-painted
+        // colour on top. The mask never gates the colour itself.
+        if (mode === 'result' && background !== null) {
+          tileImage.data[target] = background[target]
+          tileImage.data[target + 1] = background[target + 1]
+          tileImage.data[target + 2] = background[target + 2]
+          tileImage.data[target + 3] = bgAlpha
+        }
+        const source = (cellBase + i) * 4
+        if (color[source + 3] === 255) {
+          tileImage.data[target] = color[source]
+          tileImage.data[target + 1] = color[source + 1]
+          tileImage.data[target + 2] = color[source + 2]
+          tileImage.data[target + 3] = 255
         } else if (alpha[cellBase + i] === 1) {
-          const source = (cellBase + i) * 4
-          r = color[source]
-          g = color[source + 1]
-          b = color[source + 2]
+          // Source-over: the base pixel blends onto the background; a fully
+          // transparent base pixel lets the background show through.
+          const alphaBase = base[target + 3] / 255
+          if (alphaBase > 0) {
+            const alphaBg = background === null ? 0 : bgAlpha / 255
+            const alphaOut = alphaBase + alphaBg * (1 - alphaBase)
+            for (let c = 0; c < 3; c++) {
+              const baseChannel = base[target + c]
+              const bgChannel =
+                background === null ? 0 : background[target + c]
+              const blended =
+                (baseChannel * alphaBase +
+                  bgChannel * alphaBg * (1 - alphaBase)) /
+                alphaOut
+              tileImage.data[target + c] = Math.round(blended)
+            }
+            tileImage.data[target + 3] = Math.round(alphaOut * 255)
+          }
         }
-        if (dimFactor < 1 && alpha[cellBase + i] !== 1) {
-          // Dim everything outside the mask so the overlay region pops.
-          r = Math.round(r * dimFactor)
-          g = Math.round(g * dimFactor)
-          b = Math.round(b * dimFactor)
-        }
-        tileImage.data[target] = r
-        tileImage.data[target + 1] = g
-        tileImage.data[target + 2] = b
-        tileImage.data[target + 3] = 255
       }
       context.putImageData(tileImage, origin.x, origin.y)
     }
     void revision
-  }, [tileSize, revision, viewMode, maskDim, overlayVisible])
+  }, [tileSize, revision, viewMode, backgroundOpacity, overlayVisible])
 
   useEffect(() => {
     const canvas = guideCanvasRef.current
@@ -162,6 +211,21 @@ export function EditorPixelCanvas() {
   const width = GRID_COLS * tileSize
   const height = GRID_ROWS * tileSize
 
+  // Brush marker geometry in sheet-pixel coordinates. A 2 px brush renders
+  // exactly 2x2 pixels; painting fills it with the active colour, erasing
+  // shows a crisp outline instead.
+  let brushRect: { x: number; y: number; size: number } | null = null
+  if (hover !== null && (tool === 'paint' || tool === 'erase')) {
+    const size = Math.max(1, Math.min(brushSize, tileSize))
+    const half = Math.floor((size - 1) / 2)
+    const origin = cellOffsetPx(hover.cell, tileSize)
+    brushRect = {
+      x: origin.x + hover.x - half,
+      y: origin.y + hover.y - half,
+      size,
+    }
+  }
+
   return (
     <div
       ref={scrollRef}
@@ -220,6 +284,48 @@ export function EditorPixelCanvas() {
             />
           ))}
         </svg>
+        {brushRect !== null && (
+          <svg
+            className="pointer-events-none absolute inset-0 h-full w-full"
+            viewBox={`0 0 ${width} ${height}`}
+            preserveAspectRatio="none"
+            aria-hidden
+          >
+            {tool === 'paint' ? (
+              <rect
+                x={brushRect.x}
+                y={brushRect.y}
+                width={brushRect.size}
+                height={brushRect.size}
+                fill={activeColor}
+                shapeRendering="crispEdges"
+              />
+            ) : (
+              <>
+                <rect
+                  x={brushRect.x}
+                  y={brushRect.y}
+                  width={brushRect.size}
+                  height={brushRect.size}
+                  fill="none"
+                  stroke="rgba(0,0,0,0.85)"
+                  strokeWidth={3}
+                  vectorEffect="non-scaling-stroke"
+                />
+                <rect
+                  x={brushRect.x}
+                  y={brushRect.y}
+                  width={brushRect.size}
+                  height={brushRect.size}
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth={1}
+                  vectorEffect="non-scaling-stroke"
+                />
+              </>
+            )}
+          </svg>
+        )}
       </div>
     </div>
   )

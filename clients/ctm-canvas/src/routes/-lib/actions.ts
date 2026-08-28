@@ -3,6 +3,7 @@ import { hexToRgb, validateSprite } from './image'
 import { extractPalette } from './image'
 import { alphaFromTemplate } from './templates'
 import { editorStore, initialEditorState } from './store'
+import { beginStroke, clearHistory, commitStroke } from './history'
 import { USED_CELLS } from './sheet'
 import type { ActiveLayer, LayerOption } from './store'
 import type { Tool } from './store'
@@ -15,6 +16,7 @@ type LoadedSheets = {
   base: Uint8ClampedArray
   alpha: Uint8Array
   color: Uint8Array
+  background: Uint8ClampedArray | null
   activeColor: string
 }
 
@@ -33,6 +35,7 @@ function requireSheets(): LoadedSheets {
     base: state.base,
     alpha: state.alpha,
     color: state.color,
+    background: state.background,
     activeColor: state.activeColor,
   }
 }
@@ -49,8 +52,10 @@ function bumpRevision(): void {
 }
 /**
  * Initialise a new document from the uploaded sprite and an optional template
- * URL. The sprite is copied into base and into all 17 used color cells; the
- * template provides the initial binary alpha mask.
+ * URL. The sprite is copied into base (layer 1, read-only); the color layer
+ * (layer 3) starts empty; the template provides the initial binary alpha
+ * mask (layer 2). Without a template, the mask starts fully opaque so the
+ * base texture stays visible.
  */
 export async function initDocument(
   spriteBlob: Blob,
@@ -83,12 +88,11 @@ export async function initDocument(
   }
 
   const base = new Uint8ClampedArray(spriteImage.data)
+  // Layer 3 starts empty: alpha byte 0 marks every pixel as unpainted.
   const color = new Uint8Array(USED_CELLS * pixels * 4)
-  for (let cell = 0; cell < USED_CELLS; cell++) {
-    color.set(spriteImage.data, cell * pixels * 4)
-  }
 
-  let alpha: Uint8Array = new Uint8Array(USED_CELLS * pixels)
+  // Without a template the whole base texture stays visible.
+  let alpha: Uint8Array = new Uint8Array(USED_CELLS * pixels).fill(1)
   if (templateUrl !== null) {
     alpha = await decodeImageFromUrl(templateUrl).then((templateImage) =>
       alphaFromTemplate(templateImage, n),
@@ -97,6 +101,7 @@ export async function initDocument(
 
   const palette = extractPalette(spriteImage)
 
+  clearHistory()
   update({
     revision: editorStore.state.revision + 1,
     tileSize: n,
@@ -118,16 +123,24 @@ export async function applyTemplateAlpha(templateUrl: string): Promise<void> {
   const next = await decodeImageFromUrl(templateUrl).then((templateImage) =>
     alphaFromTemplate(templateImage, tileSize),
   )
+  beginStroke()
   alpha.set(next)
+  commitStroke()
   bumpRevision()
 }
 
 export function resetDocument(): void {
+  clearHistory()
   update({ ...initialEditorState })
 }
 
 export function setTool(tool: Tool): void {
   update({ tool })
+}
+
+/** Set the square brush side length in pixels, clamped to 1..64. */
+export function setBrushSize(size: number): void {
+  update({ brushSize: Math.min(64, Math.max(1, Math.round(size))) })
 }
 
 export function setActiveLayer(activeLayer: ActiveLayer): void {
@@ -146,8 +159,10 @@ export function setGuidesVisible(guidesVisible: boolean): void {
   update({ guidesVisible })
 }
 
-export function setMaskDim(maskDim: number): void {
-  update({ maskDim: Math.min(100, Math.max(0, Math.round(maskDim))) })
+export function setBackgroundOpacity(backgroundOpacity: number): void {
+  update({
+    backgroundOpacity: Math.min(100, Math.max(0, Math.round(backgroundOpacity))),
+  })
 }
 
 /** Set or clear the optional underlay texture used by editor and previews. */
@@ -208,12 +223,13 @@ export function setExportConfig(config: {
 /**
  * Apply a stroke along a dense list of pixel points inside one cell.
  *
- * On the alpha layer, paint shows pixels (alpha=1) and erase hides them
- * (alpha=0); colors are never touched. On the color layer, paint writes the
- * active colour AND reveals the pixel so the stroke is always visible in the
- * Result view and present in the export; erase restores the base sprite pixel
- * without touching visibility. The right button forces an erase on either
- * layer.
+ * On the alpha layer (layer 2), paint shows base pixels (alpha=1) and erase
+ * hides them (alpha=0); colors are never touched. On the color layer
+ * (layer 3), paint writes the active colour as a hand-painted pixel and erase
+ * removes the paint; the alpha mask is never touched, so colour strokes show
+ * no matter what the mask is. The right button forces an erase on either
+ * layer. Each point stamps a square brush of brushSize pixels per side,
+ * clipped to the tile.
  */
 export function paintStroke(
   cell: number,
@@ -230,21 +246,28 @@ export function paintStroke(
   const onAlphaLayer = editorState.activeLayer === 'alpha'
   const rgb = hexToRgb(editorState.activeColor) ?? { r: 255, g: 255, b: 255 }
 
+  // Square brush centred on each point; clamped so it never exceeds a tile.
+  const brushSize = Math.max(1, Math.min(editorState.brushSize, tileSize))
+  const half = Math.floor((brushSize - 1) / 2)
+  const start = -half
+  const end = brushSize - half
+
   for (const point of points) {
-    if (
-      point.x < 0 ||
-      point.y < 0 ||
-      point.x >= tileSize ||
-      point.y >= tileSize
-    ) {
-      continue
+    for (let dy = start; dy < end; dy++) {
+      for (let dx = start; dx < end; dx++) {
+        const x = point.x + dx
+        const y = point.y + dy
+        if (x < 0 || y < 0 || x >= tileSize || y >= tileSize) {
+          continue
+        }
+        const pixel = cell * tileSize * tileSize + y * tileSize + x
+        if (onAlphaLayer) {
+          state.alpha[pixel] = erasing ? 0 : 1
+          continue
+        }
+        applyColorStroke(state, pixel, erasing, rgb)
+      }
     }
-    const pixel = cell * tileSize * tileSize + point.y * tileSize + point.x
-    if (onAlphaLayer) {
-      state.alpha[pixel] = erasing ? 0 : 1
-      continue
-    }
-    applyColorStroke(state, pixel, erasing, rgb)
   }
   bumpRevision()
 }
@@ -257,24 +280,22 @@ function applyColorStroke(
 ): void {
   const target = pixel * 4
   if (erasing) {
-    // Restore the base sprite colour; visibility stays as-is.
-    sheets.color[target] = sheets.base[target]
-    sheets.color[target + 1] = sheets.base[target + 1]
-    sheets.color[target + 2] = sheets.base[target + 2]
-    sheets.color[target + 3] = 255
+    // Remove the hand-painted pixel; the alpha mask stays as-is.
+    sheets.color[target + 3] = 0
     return
   }
   sheets.color[target] = rgb.r
   sheets.color[target + 1] = rgb.g
   sheets.color[target + 2] = rgb.b
   sheets.color[target + 3] = 255
-  // A colour stroke always reveals its pixel.
-  sheets.alpha[pixel] = 1
 }
 
-/** Sample the composited color at a pixel and make it the active palette slot. */
+/**
+ * Sample the composited result at a pixel (painted colour, else alpha-shown
+ * base, else background) and make it the active palette slot.
+ */
 export function pickPixel(cell: number, x: number, y: number): void {
-  const { tileSize, color } = requireSheets()
+  const { tileSize, base, color, alpha, background } = requireSheets()
   if (
     cell < 0 ||
     cell >= USED_CELLS ||
@@ -285,12 +306,26 @@ export function pickPixel(cell: number, x: number, y: number): void {
   ) {
     return
   }
-  const source =
-    (cell * tileSize * tileSize + y * tileSize + x) * 4
-  const hex = `#${color[source].toString(16).padStart(2, '0')}${color[
-    source + 1
+  const pixel = cell * tileSize * tileSize + y * tileSize + x
+  // `color` spans all 17 cells; `base` and `background` are single tiles.
+  const colorSource = pixel * 4
+  const tileSource = (y * tileSize + x) * 4
+  const painted = color[colorSource + 3] === 255
+  const rgb =
+    painted === true
+      ? { array: color, source: colorSource }
+      : alpha[pixel] === 1
+        ? { array: base, source: tileSource }
+        : background !== null
+          ? { array: background, source: tileSource }
+          : null
+  if (rgb === null) {
+    return
+  }
+  const hex = `#${rgb.array[rgb.source].toString(16).padStart(2, '0')}${rgb.array[
+    rgb.source + 1
   ]
     .toString(16)
-    .padStart(2, '0')}${color[source + 2].toString(16).padStart(2, '0')}`
+    .padStart(2, '0')}${rgb.array[rgb.source + 2].toString(16).padStart(2, '0')}`
   addPaletteColor(hex)
 }

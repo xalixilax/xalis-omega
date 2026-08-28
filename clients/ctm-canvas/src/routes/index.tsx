@@ -8,6 +8,7 @@ import { EditorUploader } from './-components/editor-uploader'
 import { resetDocument } from './-lib/actions'
 import { useAutosave } from './-hooks/use-autosave'
 import { useEditor } from './-hooks/use-editor-store'
+import { useKeyboardShortcuts } from './-hooks/use-keyboard-shortcuts'
 
 export const Route = createFileRoute('/')({
   component: EditorPage,
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/')({
 
 function EditorPage() {
   useAutosave()
+  useKeyboardShortcuts()
   const tileSize = useEditor((state) => state.tileSize)
 
   return (

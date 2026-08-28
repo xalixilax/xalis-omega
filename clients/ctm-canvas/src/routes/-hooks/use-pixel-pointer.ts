@@ -1,10 +1,14 @@
 import { useCallback, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react'
 import { paintStroke, pickPixel } from '../-lib/actions'
+import { beginStroke, commitStroke } from '../-lib/history'
 import { GRID_COLS, USED_CELLS } from '../-lib/sheet'
 import { editorStore } from '../-lib/store'
 
 type PixelPoint = { x: number; y: number }
+
+/** Pixel the pointer hovers, in tile-local coordinates. */
+export type PointerTarget = { cell: number; x: number; y: number }
 
 function linePoints(from: PixelPoint, to: PixelPoint): PixelPoint[] {
   const points: PixelPoint[] = []
@@ -36,11 +40,13 @@ function linePoints(from: PixelPoint, to: PixelPoint): PixelPoint[] {
 /**
  * Translate canvas pointer events into pixel coordinates of the active sheet
  * cell and feed the active tool. The right button always erases, even while a
- * paint drag is in progress.
+ * paint drag is in progress. Hover positions are reported through
+ * `onHoverChange` so the component can render the brush marker.
  */
 export function usePixelPointer(
   canvasRef: RefObject<HTMLCanvasElement | null>,
   scrollRef: RefObject<HTMLElement | null>,
+  onHoverChange: (target: PointerTarget | null) => void,
 ) {
   const lastPixel = useRef<PixelPoint | null>(null)
   const lastCell = useRef<number | null>(null)
@@ -111,6 +117,7 @@ export function usePixelPointer(
       }
       lastPixel.current = { x: target.x, y: target.y }
       lastCell.current = target.cell
+      beginStroke()
       paintStroke(target.cell, [lastPixel.current], (event.buttons & 2) !== 0)
     },
     [toCellAndPixel, scrollRef],
@@ -129,12 +136,14 @@ export function usePixelPointer(
         }
         return
       }
+      const target = toCellAndPixel(event)
+      // Brush marker follows the pointer even while not painting.
+      onHoverChange(target)
       if ((event.buttons & 3) === 0) {
         lastPixel.current = null
         lastCell.current = null
         return
       }
-      const target = toCellAndPixel(event)
       if (!target) {
         lastPixel.current = null
         lastCell.current = null
@@ -159,19 +168,27 @@ export function usePixelPointer(
         (event.buttons & 2) !== 0,
       )
     },
-    [toCellAndPixel, scrollRef],
+    [toCellAndPixel, scrollRef, onHoverChange],
   )
 
   const onPointerUp = useCallback(() => {
     lastPixel.current = null
     lastCell.current = null
     panning.current = null
+    commitStroke()
   }, [])
+
+  const onPointerLeave = useCallback(() => {
+    lastPixel.current = null
+    lastCell.current = null
+    onHoverChange(null)
+  }, [onHoverChange])
 
   return {
     onPointerDown,
     onPointerMove,
     onPointerUp,
     onPointerCancel: onPointerUp,
+    onPointerLeave,
   }
 }

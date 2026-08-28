@@ -16,25 +16,35 @@ export type EditorState = {
   /** Side length N of one square tile. Null when no document is loaded. */
   tileSize: number | null
   baseName: string
-  /** RGBA of the uploaded sprite, N*N*4. Read-only reference. */
+  /**
+   * Layer 1: RGBA of the uploaded sprite, N*N*4. Read-only; never modified.
+   */
   base: Uint8ClampedArray | null
-  /** Binary mask per pixel per cell, 21*N*N. 1 = overlay visible. */
+  /**
+   * Layer 2: binary mask per pixel per cell, 17*N*N. 1 shows the base pixel,
+   * 0 hides it. Gates layer 1 only, never layer 3.
+   */
   alpha: Uint8Array | null
-  /** RGBA per pixel per cell, 21*N*N*4. */
+  /**
+   * Layer 3: RGBA per pixel per cell, 17*N*N*4. Independent of the alpha
+   * mask; alpha byte 255 = hand-painted pixel, 0 = no paint.
+   */
   color: Uint8Array | null
   palette: string[]
   activeColor: string
   activeCell: number
   tool: Tool
+  /** Side length of the square brush, in pixels (1 = single pixel). */
+  brushSize: number
   activeLayer: ActiveLayer
   viewMode: ViewMode
-  /** Show the overlay composite in Result view; off = pure base texture. */
+  /** Show the composite in Result view; off = pure underlay for comparison. */
   overlayVisible: boolean
   /** Show the per-tile connection guides (dashed side/corner markers). */
   guidesVisible: boolean
-  /** Percent of darkness applied to pixels outside the alpha mask (0-100). */
-  maskDim: number
-  /** Optional underlay texture (N*N*4) shown behind the overlay. */
+  /** Percent of opacity for layer 0 (background) in Result view (0-100). */
+  backgroundOpacity: number
+  /** Layer 0: optional underlay texture (N*N*4) behind the composite. */
   background: Uint8ClampedArray | null
   matchBlocks: string
   connectBlocks: string
@@ -53,11 +63,12 @@ export const initialEditorState: EditorState = {
   activeColor: '#ffffff',
   activeCell: 0,
   tool: 'paint',
+  brushSize: 1,
   activeLayer: 'alpha',
   viewMode: 'result',
   overlayVisible: true,
   guidesVisible: false,
-  maskDim: 65,
+  backgroundOpacity: 100,
   background: null,
   matchBlocks: '',
   connectBlocks: '',

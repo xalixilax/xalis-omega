@@ -6,17 +6,16 @@ import {
   DEFAULT_TEMPLATE_ID,
 } from '../-lib/templates'
 
-/** Image + template picker shown when no document is loaded. */
+/** Image upload form shown when no document is loaded. */
 export function EditorUploader() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [templateId, setTemplateId] = useState<string>(DEFAULT_TEMPLATE_ID)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const backgroundInputRef = useRef<HTMLInputElement | null>(null)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    const templateId = String(form.get('template') ?? '')
     const file = fileInputRef.current?.files?.[0]
     if (!file) {
       setError('Pick a square PNG texture first.')
@@ -26,10 +25,8 @@ export function EditorUploader() {
     setBusy(true)
     setError(null)
     try {
-      const templateUrl =
-        alphaTemplates.find((template) => template.id === templateId)?.url ??
-        null
-      await initDocument(file, templateUrl, file.name, backgroundFile)
+      const template = alphaTemplates.find((entry) => entry.id === templateId)
+      await initDocument(file, template?.url ?? null, file.name, backgroundFile)
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : 'Could not load the image.',
@@ -63,13 +60,17 @@ export function EditorUploader() {
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span>Alpha template</span>
+        <span>
+          Starting alpha{' '}
+          <span className="text-zinc-500">(initial mask for all 17 tiles)</span>
+        </span>
         <select
+          value={templateId}
+          onChange={(event) => setTemplateId(event.target.value)}
           name="template"
-          defaultValue={DEFAULT_TEMPLATE_ID}
           className="rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm"
         >
-          <option value="">None (empty alpha)</option>
+          <option value="">None (show full texture)</option>
           {alphaTemplates.map((template) => (
             <option key={template.id} value={template.id}>
               {template.label}

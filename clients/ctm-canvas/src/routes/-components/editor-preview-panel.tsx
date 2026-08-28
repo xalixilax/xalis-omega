@@ -1,65 +1,31 @@
-import { useEffect, useRef } from 'react'
-import { setActiveCell } from '../-lib/actions'
+import { useEffect, useRef, useState } from 'react'
+import { applyTemplateAlpha } from '../-lib/actions'
 import { useEditor } from '../-hooks/use-editor-store'
-import { neighborsForTileIndex } from '../-lib/overlay'
-import { USED_CELLS } from '../-lib/sheet'
 import { editorStore } from '../-lib/store'
-import type { Neighbors } from '../-lib/overlay'
+import {
+  templateViewSize,
+  TEMPLATE_VIEW_BASE_TILE,
+  templateViewComposition,
+} from '../-lib/template-view'
+import { alphaTemplates } from '../-lib/templates'
 
-const NEIGHBOR_OFFSETS: Record<keyof Neighbors, [number, number]> = {
-  top: [1, 0],
-  'top-right': [2, 0],
-  right: [2, 1],
-  'bottom-right': [2, 2],
-  bottom: [1, 2],
-  'bottom-left': [0, 2],
-  left: [0, 1],
-  'top-left': [0, 0],
-}
-
-/** Right panel: one mini 3x3 block-field per tile index, laid out as a 7x3 grid. */
+/**
+ * Right panel: a block field that shows the final result. The field size
+ * comes from the coordinates in templateViewComposition. Every block is
+ * the result composite over the background layer: hand-painted colours, else
+ * the base sprite where the alpha mask shows it, else the background (or
+ * transparency when no background is set). The view repaints on every
+ * revision.
+ */
 export function EditorPreviewPanel() {
   const tileSize = useEditor((state) => state.tileSize)
   const revision = useEditor((state) => state.revision)
-  const activeCell = useEditor((state) => state.activeCell)
-
-  if (tileSize === null) {
-    return null
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-zinc-400">
-        Connection states
-      </h2>
-      <div className="grid grid-cols-7 gap-1.5">
-        {Array.from({ length: USED_CELLS }, (_, index) => (
-          <MiniField
-            key={index}
-            index={index}
-            tileSize={tileSize}
-            revision={revision}
-            active={activeCell === index}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-type MiniFieldProps = {
-  index: number
-  tileSize: number
-  revision: number
-  active: boolean
-}
-
-function MiniField({ index, tileSize, revision, active }: MiniFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (canvas === null) {
+    if (canvas === null || tileSize === null) {
       return
     }
     const context = canvas.getContext('2d')
@@ -70,90 +36,148 @@ function MiniField({ index, tileSize, revision, active }: MiniFieldProps) {
     if (base === null || alpha === null || color === null) {
       return
     }
-    const underlay = background ?? base
 
-    const size = tileSize * 3
-    context.clearRect(0, 0, size, size)
-    context.fillStyle = '#27272a'
-    context.fillRect(0, 0, size, size)
+    const [cols, rows] = templateViewSize
+    const width = cols * tileSize
+    const height = rows * tileSize
+    const pixels = tileSize * tileSize
+    const image = new ImageData(width, height)
 
-    const neighbors = neighborsForTileIndex(index)
-    for (const key of Object.keys(NEIGHBOR_OFFSETS) as Array<keyof Neighbors>) {
-      if (!neighbors[key]) {
-        continue
+    // Layer 0: the background texture covers the whole field.
+    if (background !== null) {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const source = ((y % tileSize) * tileSize + (x % tileSize)) * 4
+          const target = (y * width + x) * 4
+          image.data[target] = background[source]
+          image.data[target + 1] = background[source + 1]
+          image.data[target + 2] = background[source + 2]
+          image.data[target + 3] = 255
+        }
       }
-      const [col, row] = NEIGHBOR_OFFSETS[key]
-      drawBase(context, col * tileSize, row * tileSize, underlay, tileSize)
     }
-    drawCompositedCenter(
-      context,
-      tileSize,
-      index,
-      alpha,
-      color,
-      underlay,
-    )
-    void revision
-  }, [tileSize, revision, index])
 
-  return (
-    <button
-      type="button"
-      onClick={() => setActiveCell(index)}
-      title={`Tile ${index}`}
-      className={`overflow-hidden rounded-sm border ${
-        active ? 'border-amber-500' : 'border-zinc-800 hover:border-zinc-600'
-      }`}
-    >
-      <canvas
-        ref={canvasRef}
-        width={tileSize * 3}
-        height={tileSize * 3}
-        className="pixelated block h-auto w-full"
-      />
-    </button>
-  )
-}
+    for (const cell of templateViewComposition) {
+      const [col, row] = cell.coords
+      for (const tile of cell.tiles) {
+        // The base tile (17) shows the plain sprite, without overlay pixels.
+        const isBaseTile = tile === TEMPLATE_VIEW_BASE_TILE
+        const cellBase = isBaseTile ? 0 : tile * pixels
+        for (let y = 0; y < tileSize; y++) {
+          for (let x = 0; x < tileSize; x++) {
+            const pixel = cellBase + y * tileSize + x
+            const source = pixel * 4
+            const target =
+              ((row * tileSize + y) * width + col * tileSize + x) * 4
+            if (!isBaseTile && color[source + 3] === 255) {
+              // Hand-painted colour: independent of the alpha mask.
+              image.data[target] = color[source]
+              image.data[target + 1] = color[source + 1]
+              image.data[target + 2] = color[source + 2]
+              image.data[target + 3] = 255
+            } else if (isBaseTile || alpha[pixel] === 1) {
+              // Source-over: the base pixel blends onto the background; a
+              // fully transparent base pixel keeps what is underneath. The
+              // base sprite is a single tile, so index it within the tile.
+              const baseSource = (y * tileSize + x) * 4
+              const alphaBase = base[baseSource + 3] / 255
+              if (alphaBase > 0) {
+                const alphaBg = image.data[target + 3] / 255
+                const alphaOut = alphaBase + alphaBg * (1 - alphaBase)
+                for (let c = 0; c < 3; c++) {
+                  const blended =
+                    (base[baseSource + c] * alphaBase +
+                      image.data[target + c] * alphaBg * (1 - alphaBase)) /
+                    alphaOut
+                  image.data[target + c] = Math.round(blended)
+                }
+                image.data[target + 3] = Math.round(alphaOut * 255)
+              }
+            }
+          }
+        }
+      }
+    }
+    context.putImageData(image, 0, 0)
+  }, [tileSize, revision])
 
-function drawBase(
-  context: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  base: Uint8ClampedArray,
-  tileSize: number,
-): void {
-  const image = new ImageData(
-    new Uint8ClampedArray(
-      base.buffer as ArrayBuffer,
-      base.byteOffset,
-      base.byteLength,
-    ),
-    tileSize,
-    tileSize,
-  )
-  context.putImageData(image, x, y)
-}
+  if (tileSize === null) {
+    return null
+  }
 
-function drawCompositedCenter(
-  context: CanvasRenderingContext2D,
-  tileSize: number,
-  index: number,
-  alpha: Uint8Array,
-  color: Uint8Array,
-  base: Uint8ClampedArray,
-): void {
-  const pixels = tileSize * tileSize
-  const image = new ImageData(tileSize, tileSize)
-  image.data.set(base.subarray(0, pixels * 4))
-  const cellBase = index * pixels
-  for (let i = 0; i < pixels; i++) {
-    if (alpha[cellBase + i] === 1) {
-      const source = (cellBase + i) * 4
-      image.data[i * 4] = color[source]
-      image.data[i * 4 + 1] = color[source + 1]
-      image.data[i * 4 + 2] = color[source + 2]
-      image.data[i * 4 + 3] = 255
+  const [cols, rows] = templateViewSize
+  const width = cols * tileSize
+  const height = rows * tileSize
+
+  async function loadTemplate(url: string): Promise<void> {
+    setError(null)
+    try {
+      await applyTemplateAlpha(url)
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : 'Could not load template.',
+      )
     }
   }
-  context.putImageData(image, tileSize, tileSize)
+
+  function handleFile(event: React.ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (file === undefined) {
+      return
+    }
+    void loadTemplate(URL.createObjectURL(file))
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <h2 className="text-sm font-semibold text-zinc-400">Result preview</h2>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        title={`${cols}x${rows} composition of the sheet tiles over the background`}
+        className="pixelated block h-auto w-full rounded-sm border border-zinc-800"
+      />
+      <div className="flex flex-wrap items-center gap-1.5">
+        <select
+          value=""
+          onChange={(event) => {
+            const template = alphaTemplates.find(
+              (entry) => entry.id === event.target.value,
+            )
+            if (template !== undefined) {
+              void loadTemplate(template.url)
+            }
+          }}
+          className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300"
+        >
+          <option value="">Apply alpha template...</option>
+          {alphaTemplates.map((template) => (
+            <option key={template.id} value={template.id}>
+              {template.label}
+            </option>
+          ))}
+        </select>
+        <label className="cursor-pointer rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-500">
+          Load PNG...
+          <input
+            type="file"
+            accept="image/png"
+            onChange={handleFile}
+            className="hidden"
+          />
+        </label>
+      </div>
+      {error !== null && (
+        <p className="text-xs text-red-400" role="alert">
+          {error}
+        </p>
+      )}
+      <p className="text-xs text-zinc-500">
+        {cols}x{rows} blocks over the background. Tiles merge per block; 17 =
+        base tile.
+      </p>
+    </div>
+  )
 }

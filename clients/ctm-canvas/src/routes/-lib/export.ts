@@ -39,9 +39,10 @@ export function propertiesFileName(
 }
 
 /**
- * Build the full 7x3 overlay sheet as RGBA pixels: every used cell holds the
- * color pixels gated by the binary alpha mask, padding cells stay fully
- * transparent.
+ * Build the full 7x3 result sheet as RGBA pixels. Per pixel, the hand-painted
+ * colour wins, else the base sprite shows where the alpha mask is 1 (the base
+ * pixel's own alpha is kept, so transparent base pixels stay transparent),
+ * else the pixel stays fully transparent. Padding cells stay transparent.
  */
 export type SheetImage = {
   width: number
@@ -50,6 +51,53 @@ export type SheetImage = {
 }
 
 export function composeOverlaySheet(
+  tileSize: number,
+  base: Uint8ClampedArray,
+  color: Uint8Array,
+  alpha: Uint8Array,
+): SheetImage {
+  const width = 7 * tileSize
+  const height = 3 * tileSize
+  const sheet = new Uint8ClampedArray(width * height * 4)
+
+  for (let cell = 0; cell < 17; cell++) {
+    const col = cell % 7
+    const row = Math.floor(cell / 7)
+    const cellBase = cell * tileSize * tileSize
+    for (let y = 0; y < tileSize; y++) {
+      for (let x = 0; x < tileSize; x++) {
+        const pixel = cellBase + y * tileSize + x
+        const source = pixel * 4
+        const painted = color[source + 3] === 255
+        if (!painted && alpha[pixel] !== 1) {
+          continue
+        }
+        // Colour is per cell, but the base is one sprite shared by all
+        // cells, so the base must be read inside its own tile.
+        const layer = painted ? color : base
+        const layerSource = painted ? source : (y * tileSize + x) * 4
+        const layerAlpha = painted ? 255 : layer[layerSource + 3]
+        if (layerAlpha === 0) {
+          continue
+        }
+        const target = ((row * tileSize + y) * width + col * tileSize + x) * 4
+        sheet[target] = layer[layerSource]
+        sheet[target + 1] = layer[layerSource + 1]
+        sheet[target + 2] = layer[layerSource + 2]
+        sheet[target + 3] = layerAlpha
+      }
+    }
+  }
+
+  return { width, height, data: sheet }
+}
+
+/**
+ * Build the full 7x3 alpha sheet as opaque black/white pixels: white where
+ * the base shows through the alpha mask OR where a hand-painted colour sits,
+ * black everywhere else. Padding cells stay black.
+ */
+export function composeAlphaSheet(
   tileSize: number,
   color: Uint8Array,
   alpha: Uint8Array,
@@ -65,14 +113,12 @@ export function composeOverlaySheet(
     for (let y = 0; y < tileSize; y++) {
       for (let x = 0; x < tileSize; x++) {
         const pixel = cellBase + y * tileSize + x
-        if (alpha[pixel] === 0) {
-          continue
-        }
-        const source = pixel * 4
+        const visible = alpha[pixel] === 1 || color[pixel * 4 + 3] === 255
+        const value = visible ? 255 : 0
         const target = ((row * tileSize + y) * width + col * tileSize + x) * 4
-        sheet[target] = color[source]
-        sheet[target + 1] = color[source + 1]
-        sheet[target + 2] = color[source + 2]
+        sheet[target] = value
+        sheet[target + 1] = value
+        sheet[target + 2] = value
         sheet[target + 3] = 255
       }
     }
