@@ -211,17 +211,16 @@ export function EditorPixelCanvas() {
   const width = GRID_COLS * tileSize
   const height = GRID_ROWS * tileSize
 
-  // Brush marker geometry in sheet-pixel coordinates. A 2 px brush renders
-  // exactly 2x2 pixels; painting fills it with the active colour, erasing
-  // shows a crisp outline instead.
+  // Brush marker geometry in sheet-pixel coordinates, same space the strokes
+  // use. A 2 px brush renders exactly 2x2 pixels and crosses tile boundaries;
+  // painting fills it with the active colour, erasing shows a crisp outline.
   let brushRect: { x: number; y: number; size: number } | null = null
   if (hover !== null && (tool === 'paint' || tool === 'erase')) {
-    const size = Math.max(1, Math.min(brushSize, tileSize))
+    const size = Math.max(1, brushSize)
     const half = Math.floor((size - 1) / 2)
-    const origin = cellOffsetPx(hover.cell, tileSize)
     brushRect = {
-      x: origin.x + hover.x - half,
-      y: origin.y + hover.y - half,
+      x: hover.x - half,
+      y: hover.y - half,
       size,
     }
   }

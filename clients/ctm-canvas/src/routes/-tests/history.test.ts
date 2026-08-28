@@ -36,7 +36,7 @@ beforeEach(loadDocument)
 describe('undo/redo', () => {
   it('reverts an alpha stroke and reapplies it with redo', () => {
     beginStroke()
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     commitStroke()
     expect(alphaAt(0, 0, 0)).toBe(1)
 
@@ -49,8 +49,8 @@ describe('undo/redo', () => {
 
   it('groups a whole drag into one undo step', () => {
     beginStroke()
-    paintStroke(0, [{ x: 0, y: 0 }])
-    paintStroke(0, [{ x: 1, y: 1 }])
+    paintStroke([{ x: 0, y: 0 }])
+    paintStroke([{ x: 1, y: 1 }])
     commitStroke()
 
     undo()
@@ -61,7 +61,7 @@ describe('undo/redo', () => {
   it('reverts colour strokes and erases on either layer', () => {
     setActiveLayer('color')
     beginStroke()
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     commitStroke()
     expect(editorStore.state.color![3]).toBe(255)
 
@@ -71,16 +71,16 @@ describe('undo/redo', () => {
     // Painted colour, then masked, then erased: one undo step each.
     setActiveLayer('color')
     beginStroke()
-    paintStroke(0, [{ x: 1, y: 0 }])
+    paintStroke([{ x: 1, y: 0 }])
     commitStroke()
     setActiveLayer('alpha')
     beginStroke()
-    paintStroke(0, [{ x: 1, y: 0 }])
+    paintStroke([{ x: 1, y: 0 }])
     commitStroke()
     setActiveLayer('color')
     beginStroke()
     setTool('erase')
-    paintStroke(0, [{ x: 1, y: 0 }])
+    paintStroke([{ x: 1, y: 0 }])
     commitStroke()
     expect(editorStore.state.color![1 * 4 + 3]).toBe(0)
 
@@ -99,12 +99,12 @@ describe('undo/redo', () => {
 
   it('clears the redo stack on a new stroke', () => {
     beginStroke()
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     commitStroke()
     undo()
 
     beginStroke()
-    paintStroke(0, [{ x: 1, y: 1 }])
+    paintStroke([{ x: 1, y: 1 }])
     commitStroke()
 
     // The redo of the first stroke must do nothing now.
@@ -116,7 +116,7 @@ describe('undo/redo', () => {
   it('keeps at most HISTORY_LIMIT undo steps', () => {
     for (let step = 0; step < HISTORY_LIMIT + 5; step++) {
       beginStroke()
-      paintStroke(0, [{ x: 0, y: 0 }])
+      paintStroke([{ x: 0, y: 0 }])
       commitStroke()
       undo()
     }

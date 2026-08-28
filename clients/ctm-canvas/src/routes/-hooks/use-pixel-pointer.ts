@@ -2,13 +2,13 @@ import { useCallback, useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent, RefObject } from 'react'
 import { paintStroke, pickPixel } from '../-lib/actions'
 import { beginStroke, commitStroke } from '../-lib/history'
-import { GRID_COLS, USED_CELLS } from '../-lib/sheet'
+import { GRID_COLS } from '../-lib/sheet'
 import { editorStore } from '../-lib/store'
 
 type PixelPoint = { x: number; y: number }
 
-/** Pixel the pointer hovers, in tile-local coordinates. */
-export type PointerTarget = { cell: number; x: number; y: number }
+/** Pixel the pointer hovers, in whole-sheet pixel coordinates. */
+export type PointerTarget = { x: number; y: number }
 
 function linePoints(from: PixelPoint, to: PixelPoint): PixelPoint[] {
   const points: PixelPoint[] = []
@@ -38,10 +38,11 @@ function linePoints(from: PixelPoint, to: PixelPoint): PixelPoint[] {
 }
 
 /**
- * Translate canvas pointer events into pixel coordinates of the active sheet
- * cell and feed the active tool. The right button always erases, even while a
- * paint drag is in progress. Hover positions are reported through
- * `onHoverChange` so the component can render the brush marker.
+ * Translate canvas pointer events into whole-sheet pixel coordinates and feed
+ * the active tool. Strokes are not clipped at tile boundaries: the sheet is
+ * edited as one canvas. The right button always erases, even while a paint
+ * drag is in progress. Hover positions are reported through `onHoverChange`
+ * so the component can render the brush marker.
  */
 export function usePixelPointer(
   canvasRef: RefObject<HTMLCanvasElement | null>,
@@ -49,7 +50,6 @@ export function usePixelPointer(
   onHoverChange: (target: PointerTarget | null) => void,
 ) {
   const lastPixel = useRef<PixelPoint | null>(null)
-  const lastCell = useRef<number | null>(null)
   const panning = useRef<{
     pointerX: number
     pointerY: number
@@ -57,7 +57,7 @@ export function usePixelPointer(
     scrollTop: number
   } | null>(null)
 
-  const toCellAndPixel = useCallback(
+  const toSheetPixel = useCallback(
     (event: ReactPointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current
       const { tileSize } = editorStore.state
@@ -74,17 +74,7 @@ export function usePixelPointer(
       if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) {
         return null
       }
-      const cellCol = Math.floor(px / tileSize)
-      const cellRow = Math.floor(py / tileSize)
-      const cell = cellRow * GRID_COLS + cellCol
-      if (cell < 0 || cell >= USED_CELLS) {
-        return null
-      }
-      return {
-        cell,
-        x: px - cellCol * tileSize,
-        y: py - cellRow * tileSize,
-      }
+      return { x: px, y: py }
     },
     [canvasRef],
   )
@@ -106,21 +96,29 @@ export function usePixelPointer(
         return
       }
 
-      const target = toCellAndPixel(event)
+      const target = toSheetPixel(event)
       if (!target) {
         return
       }
       event.currentTarget.setPointerCapture(event.pointerId)
       if (tool === 'picker' && (event.buttons & 2) === 0) {
-        pickPixel(target.cell, target.x, target.y)
+        const { tileSize } = editorStore.state
+        if (tileSize !== null) {
+          const col = Math.floor(target.x / tileSize)
+          const row = Math.floor(target.y / tileSize)
+          pickPixel(
+            row * GRID_COLS + col,
+            target.x - col * tileSize,
+            target.y - row * tileSize,
+          )
+        }
         return
       }
-      lastPixel.current = { x: target.x, y: target.y }
-      lastCell.current = target.cell
+      lastPixel.current = target
       beginStroke()
-      paintStroke(target.cell, [lastPixel.current], (event.buttons & 2) !== 0)
+      paintStroke([target], (event.buttons & 2) !== 0)
     },
-    [toCellAndPixel, scrollRef],
+    [toSheetPixel, scrollRef],
   )
 
   const onPointerMove = useCallback(
@@ -136,51 +134,37 @@ export function usePixelPointer(
         }
         return
       }
-      const target = toCellAndPixel(event)
+      const target = toSheetPixel(event)
       // Brush marker follows the pointer even while not painting.
       onHoverChange(target)
       if ((event.buttons & 3) === 0) {
         lastPixel.current = null
-        lastCell.current = null
         return
       }
       if (!target) {
         lastPixel.current = null
-        lastCell.current = null
         return
       }
-      const current = { x: target.x, y: target.y }
-      // Entering another tile starts a fresh stroke segment: interpolating
-      // from the previous tile's pixel coordinates would smear a line across
-      // the whole new tile.
       const last = lastPixel.current
-      const sameCell = last !== null && lastCell.current === target.cell
-      const from = sameCell ? last : current
+      const from = last ?? target
       const points =
-        from.x === current.x && from.y === current.y
-          ? [current]
-          : linePoints(from, current)
-      lastPixel.current = current
-      lastCell.current = target.cell
-      paintStroke(
-        target.cell,
-        points,
-        (event.buttons & 2) !== 0,
-      )
+        from.x === target.x && from.y === target.y
+          ? [target]
+          : linePoints(from, target)
+      lastPixel.current = target
+      paintStroke(points, (event.buttons & 2) !== 0)
     },
-    [toCellAndPixel, scrollRef, onHoverChange],
+    [toSheetPixel, scrollRef, onHoverChange],
   )
 
   const onPointerUp = useCallback(() => {
     lastPixel.current = null
-    lastCell.current = null
     panning.current = null
     commitStroke()
   }, [])
 
   const onPointerLeave = useCallback(() => {
     lastPixel.current = null
-    lastCell.current = null
     onHoverChange(null)
   }, [onHoverChange])
 

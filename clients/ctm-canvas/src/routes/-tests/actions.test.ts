@@ -56,7 +56,7 @@ describe('strokes on the alpha layer', () => {
   it('paint shows a base pixel and leaves the color layer untouched', () => {
     setActiveLayer('alpha')
     setTool('paint')
-    paintStroke(0, [{ x: 1, y: 0 }])
+    paintStroke([{ x: 1, y: 0 }])
 
     expect(alphaAt(0, 1, 0)).toBe(1)
     expect(paintedAt(0, 1, 0)).toBe(false)
@@ -66,11 +66,11 @@ describe('strokes on the alpha layer', () => {
   it('erase hides a pixel and leaves the color layer untouched', () => {
     setActiveLayer('alpha')
     setTool('paint')
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     expect(alphaAt(0, 0, 0)).toBe(1)
 
     setTool('erase')
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     expect(alphaAt(0, 0, 0)).toBe(0)
     expect(paintedAt(0, 0, 0)).toBe(false)
   })
@@ -81,7 +81,7 @@ describe('strokes on the color layer', () => {
     setActiveLayer('color')
     setActiveColor('#ff0000')
     setTool('paint')
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
 
     expect(colorAt(0, 0, 0)).toEqual([255, 0, 0])
     expect(paintedAt(0, 0, 0)).toBe(true)
@@ -92,13 +92,13 @@ describe('strokes on the color layer', () => {
     setActiveLayer('color')
     setActiveColor('#ff0000')
     setTool('paint')
-    paintStroke(0, [{ x: 1, y: 1 }])
+    paintStroke([{ x: 1, y: 1 }])
     expect(colorAt(0, 1, 1)).toEqual([255, 0, 0])
     expect(paintedAt(0, 1, 1)).toBe(true)
 
     editorStore.state.alpha![0 * PIXELS + 1 * N + 1] = 1
     setTool('erase')
-    paintStroke(0, [{ x: 1, y: 1 }])
+    paintStroke([{ x: 1, y: 1 }])
     expect(paintedAt(0, 1, 1)).toBe(false)
     // Visibility is governed by the alpha layer only.
     expect(alphaAt(0, 1, 1)).toBe(1)
@@ -108,10 +108,10 @@ describe('strokes on the color layer', () => {
     setActiveLayer('color')
     setActiveColor('#ff0000')
     setTool('paint')
-    paintStroke(0, [{ x: 0, y: 1 }])
+    paintStroke([{ x: 0, y: 1 }])
     expect(paintedAt(0, 0, 1)).toBe(true)
 
-    paintStroke(0, [{ x: 0, y: 1 }], true)
+    paintStroke([{ x: 0, y: 1 }], true)
     expect(paintedAt(0, 0, 1)).toBe(false)
     expect(alphaAt(0, 0, 1)).toBe(0)
   })
@@ -121,7 +121,7 @@ describe('brush size', () => {
   it('paints a square brush on the alpha layer', () => {
     setActiveLayer('alpha')
     setBrushSize(2)
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     for (let y = 0; y < N; y++) {
       for (let x = 0; x < N; x++) {
         expect(alphaAt(0, x, y)).toBe(1)
@@ -134,7 +134,7 @@ describe('brush size', () => {
     setActiveLayer('color')
     setActiveColor('#ff0000')
     setBrushSize(2)
-    paintStroke(0, [{ x: 0, y: 0 }])
+    paintStroke([{ x: 0, y: 0 }])
     for (let y = 0; y < N; y++) {
       for (let x = 0; x < N; x++) {
         expect(paintedAt(0, x, y)).toBe(true)
@@ -143,16 +143,25 @@ describe('brush size', () => {
     expect(alphaAt(0, 0, 0)).toBe(0)
   })
 
-  it('clamps the brush to the tile size', () => {
+  it('stamps a brush across tile boundaries', () => {
+    setActiveLayer('alpha')
+    setBrushSize(3)
+    paintStroke([{ x: 1, y: 1 }])
+    // The stamp covers sheet pixels 0..2 in both axes, spilling into the
+    // neighbouring tiles: cell 1 right, cell 7 below, cell 8 diagonal.
+    expect(alphaAt(0, 1, 1)).toBe(1)
+    expect(alphaAt(1, 0, 1)).toBe(1)
+    expect(alphaAt(1, 0, 0)).toBe(1)
+    expect(alphaAt(7, 1, 0)).toBe(1)
+    expect(alphaAt(8, 0, 0)).toBe(1)
+    // Tiles outside the stamp stay untouched.
+    expect(alphaAt(2, 0, 0)).toBe(0)
+  })
+
+  it('clamps the stored brush size', () => {
     setBrushSize(999)
     expect(editorStore.state.brushSize).toBe(64)
-    setActiveLayer('alpha')
-    paintStroke(0, [{ x: 0, y: 0 }])
-    for (let y = 0; y < N; y++) {
-      for (let x = 0; x < N; x++) {
-        expect(alphaAt(0, x, y)).toBe(1)
-      }
-    }
-    expect(alphaAt(1, 0, 0)).toBe(0)
+    setBrushSize(0)
+    expect(editorStore.state.brushSize).toBe(1)
   })
 })

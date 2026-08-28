@@ -4,7 +4,7 @@ import { extractPalette } from './image'
 import { alphaFromTemplate } from './templates'
 import { editorStore, initialEditorState } from './store'
 import { beginStroke, clearHistory, commitStroke } from './history'
-import { USED_CELLS } from './sheet'
+import { GRID_COLS, GRID_ROWS, USED_CELLS } from './sheet'
 import type { ActiveLayer, LayerOption } from './store'
 import type { Tool } from './store'
 import type { ViewMode } from './store'
@@ -221,46 +221,56 @@ export function setExportConfig(config: {
 }
 
 /**
- * Apply a stroke along a dense list of pixel points inside one cell.
+ * Apply a stroke along a dense list of pixel points in whole-sheet
+ * coordinates (0..GRID_COLS*N-1, 0..GRID_ROWS*N-1).
  *
  * On the alpha layer (layer 2), paint shows base pixels (alpha=1) and erase
  * hides them (alpha=0); colors are never touched. On the color layer
  * (layer 3), paint writes the active colour as a hand-painted pixel and erase
  * removes the paint; the alpha mask is never touched, so colour strokes show
  * no matter what the mask is. The right button forces an erase on either
- * layer. Each point stamps a square brush of brushSize pixels per side,
- * clipped to the tile.
+ * layer. Each point stamps a square brush of brushSize pixels per side; the
+ * stamp crosses tile boundaries freely, only clipped at the sheet edges.
  */
-export function paintStroke(
-  cell: number,
-  points: Point[],
-  forceErase = false,
-): void {
+export function paintStroke(points: Point[], forceErase = false): void {
   const state = requireSheets()
-  if (points.length === 0 || cell < 0 || cell >= USED_CELLS) {
+  if (points.length === 0) {
     return
   }
   const { tileSize } = state
   const editorState = editorStore.state
+  const sheetWidth = GRID_COLS * tileSize
+  const sheetHeight = GRID_ROWS * tileSize
   const erasing = forceErase === true || editorState.tool === 'erase'
   const onAlphaLayer = editorState.activeLayer === 'alpha'
   const rgb = hexToRgb(editorState.activeColor) ?? { r: 255, g: 255, b: 255 }
 
-  // Square brush centred on each point; clamped so it never exceeds a tile.
-  const brushSize = Math.max(1, Math.min(editorState.brushSize, tileSize))
+  // Square brush centred on each point.
+  const brushSize = Math.max(1, editorState.brushSize)
   const half = Math.floor((brushSize - 1) / 2)
   const start = -half
   const end = brushSize - half
+  const pixelsPerTile = tileSize * tileSize
 
   for (const point of points) {
     for (let dy = start; dy < end; dy++) {
+      const y = point.y + dy
+      if (y < 0 || y >= sheetHeight) {
+        continue
+      }
+      const cellRow = Math.floor(y / tileSize)
+      const localY = y - cellRow * tileSize
       for (let dx = start; dx < end; dx++) {
         const x = point.x + dx
-        const y = point.y + dy
-        if (x < 0 || y < 0 || x >= tileSize || y >= tileSize) {
+        if (x < 0 || x >= sheetWidth) {
           continue
         }
-        const pixel = cell * tileSize * tileSize + y * tileSize + x
+        const cellCol = Math.floor(x / tileSize)
+        const cell = cellRow * GRID_COLS + cellCol
+        const pixel =
+          cell * pixelsPerTile +
+          localY * tileSize +
+          (x - cellCol * tileSize)
         if (onAlphaLayer) {
           state.alpha[pixel] = erasing ? 0 : 1
           continue
