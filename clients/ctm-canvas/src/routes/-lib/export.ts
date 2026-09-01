@@ -1,3 +1,4 @@
+import { USED_CELLS } from './sheet'
 import type { LayerOption } from './store'
 
 export type PropertiesInput = {
@@ -40,9 +41,11 @@ export function propertiesFileName(
 
 /**
  * Build the full 7x3 result sheet as RGBA pixels. Per pixel, the hand-painted
- * colour wins, else the base sprite shows where the alpha mask is 1 (the base
- * pixel's own alpha is kept, so transparent base pixels stay transparent),
- * else the pixel stays fully transparent. Padding cells stay transparent.
+ * colour wins, else the per-cell base pixel shows where the alpha mask is 1
+ * (the base pixel's own alpha is kept, so transparent base pixels stay
+ * transparent), else the pixel stays fully transparent. Cell 17 (the first
+ * padding cell) always carries the plain base tile; the remaining padding
+ * cells stay transparent.
  */
 export type SheetImage = {
   width: number
@@ -72,20 +75,35 @@ export function composeOverlaySheet(
         if (!painted && alpha[pixel] !== 1) {
           continue
         }
-        // Colour is per cell, but the base is one sprite shared by all
-        // cells, so the base must be read inside its own tile.
+        // Colour and base are both per cell, so both read at the same index.
         const layer = painted ? color : base
-        const layerSource = painted ? source : (y * tileSize + x) * 4
-        const layerAlpha = painted ? 255 : layer[layerSource + 3]
+        const layerAlpha = painted ? 255 : layer[source + 3]
         if (layerAlpha === 0) {
           continue
         }
         const target = ((row * tileSize + y) * width + col * tileSize + x) * 4
-        sheet[target] = layer[layerSource]
-        sheet[target + 1] = layer[layerSource + 1]
-        sheet[target + 2] = layer[layerSource + 2]
+        sheet[target] = layer[source]
+        sheet[target + 1] = layer[source + 1]
+        sheet[target + 2] = layer[source + 2]
         sheet[target + 3] = layerAlpha
       }
+    }
+  }
+
+  // Cell 17 (row 2, col 3): the plain base tile, untouched by mask or paint.
+  const col = USED_CELLS % 7
+  const row = Math.floor(USED_CELLS / 7)
+  for (let y = 0; y < tileSize; y++) {
+    for (let x = 0; x < tileSize; x++) {
+      const source = (y * tileSize + x) * 4
+      if (base[source + 3] === 0) {
+        continue
+      }
+      const target = ((row * tileSize + y) * width + col * tileSize + x) * 4
+      sheet[target] = base[source]
+      sheet[target + 1] = base[source + 1]
+      sheet[target + 2] = base[source + 2]
+      sheet[target + 3] = base[source + 3]
     }
   }
 

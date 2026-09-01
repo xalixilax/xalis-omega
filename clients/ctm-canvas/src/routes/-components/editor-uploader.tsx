@@ -43,8 +43,10 @@ export function EditorUploader() {
       <div>
         <h2 className="text-base font-semibold">New overlay document</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Pick a square Minecraft sprite (16x, 32x, 64x...). It is copied into
-          all 17 overlay cells.
+          Pick a square Minecraft sprite (16x, 32x, 64x...), or a full 7x3
+          sheet to tweak an existing texture. A sheet with its base tile in
+          slot 18 restores the cutout mask and painted colours. The select
+          below only applies to other uploads.
         </p>
       </div>
 

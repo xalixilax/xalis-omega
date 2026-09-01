@@ -92,12 +92,15 @@ export function EditorPixelCanvas() {
         }
         if (mode === 'result' && !state.overlayVisible) {
           // Composite hidden: pure underlay for comparison, keeping its own
-          // alpha so transparent pixels do not turn black.
-          const underlay = background ?? base
-          tileImage.data[target] = underlay[target]
-          tileImage.data[target + 1] = underlay[target + 1]
-          tileImage.data[target + 2] = underlay[target + 2]
-          tileImage.data[target + 3] = background === null ? underlay[target + 3] : 255
+          // alpha so transparent pixels do not turn black. The base is per
+          // cell; the background is a single tile.
+          const underlay = background === null ? base : background
+          const source = background === null ? (cellBase + i) * 4 : target
+          tileImage.data[target] = underlay[source]
+          tileImage.data[target + 1] = underlay[source + 1]
+          tileImage.data[target + 2] = underlay[source + 2]
+          tileImage.data[target + 3] =
+            background === null ? underlay[source + 3] : 255
           continue
         }
         // Result and Color views, bottom to top: (Result only) background at
@@ -117,13 +120,14 @@ export function EditorPixelCanvas() {
           tileImage.data[target + 3] = 255
         } else if (alpha[cellBase + i] === 1) {
           // Source-over: the base pixel blends onto the background; a fully
-          // transparent base pixel lets the background show through.
-          const alphaBase = base[target + 3] / 255
+          // transparent base pixel lets the background show through. The
+          // base is per cell, so it reads at the same index as the colour.
+          const alphaBase = base[source + 3] / 255
           if (alphaBase > 0) {
             const alphaBg = background === null ? 0 : bgAlpha / 255
             const alphaOut = alphaBase + alphaBg * (1 - alphaBase)
             for (let c = 0; c < 3; c++) {
-              const baseChannel = base[target + c]
+              const baseChannel = base[source + c]
               const bgChannel =
                 background === null ? 0 : background[target + c]
               const blended =

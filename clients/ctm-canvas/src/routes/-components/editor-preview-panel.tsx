@@ -78,8 +78,9 @@ export function EditorPreviewPanel() {
             } else if (isBaseTile || alpha[pixel] === 1) {
               // Source-over: the base pixel blends onto the background; a
               // fully transparent base pixel keeps what is underneath. The
-              // base sprite is a single tile, so index it within the tile.
-              const baseSource = (y * tileSize + x) * 4
+              // base is per cell, so it reads at the same index as the
+              // colour; the base tile shows cell 0's plain pixels.
+              const baseSource = (cellBase + y * tileSize + x) * 4
               const alphaBase = base[baseSource + 3] / 255
               if (alphaBase > 0) {
                 const alphaBg = image.data[target + 3] / 255

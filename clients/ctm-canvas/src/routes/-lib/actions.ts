@@ -51,11 +51,133 @@ function bumpRevision(): void {
   }))
 }
 /**
- * Initialise a new document from the uploaded sprite and an optional template
- * URL. The sprite is copied into base (layer 1, read-only); the color layer
- * (layer 3) starts empty; the template provides the initial binary alpha
- * mask (layer 2). Without a template, the mask starts fully opaque so the
- * base texture stays visible.
+ * Build the per-cell base layer (layer 1). A square sprite is replicated
+ * into every cell; a 7x3 sheet keeps its own pixels per cell, so imported
+ * textures can be tweaked tile by tile.
+ */
+export function baseFromSprite(
+  sprite: { width: number; data: Uint8ClampedArray },
+  tileSize: number,
+  isSheet: boolean,
+): Uint8ClampedArray {
+  const pixels = tileSize * tileSize
+  const tileBytes = pixels * 4
+  const base = new Uint8ClampedArray(USED_CELLS * tileBytes)
+  if (!isSheet) {
+    for (let cell = 0; cell < USED_CELLS; cell++) {
+      base.set(sprite.data.subarray(0, tileBytes), cell * tileBytes)
+    }
+    return base
+  }
+  for (let cell = 0; cell < USED_CELLS; cell++) {
+    const col = cell % GRID_COLS
+    const row = Math.floor(cell / GRID_COLS)
+    for (let y = 0; y < tileSize; y++) {
+      const from =
+        ((row * tileSize + y) * sprite.width + col * tileSize) * 4
+      base.set(
+        sprite.data.subarray(from, from + tileSize * 4),
+        cell * tileBytes + y * tileSize * 4,
+      )
+    }
+  }
+  return base
+}
+
+/**
+ * Rebuild the editing state from a 7x3 sheet that carries the plain base
+ * tile in cell 17 (row 2, col 3), the slot the export fills. Per pixel of
+ * cells 0-16: equal to the base tile shows the base (mask 1); transparent
+ * over an opaque base pixel is a cut-out (mask 0); any other differing
+ * opaque pixel becomes a hand-painted colour (mask 0). The base becomes the
+ * plain tile, shared by every cell. Returns null when cell 17 holds no
+ * opaque pixel, so callers keep the plain per-cell import.
+ */
+export function sheetStateFromBaseTile(
+  sheet: { width: number; data: Uint8ClampedArray },
+  tileSize: number,
+): {
+  base: Uint8ClampedArray
+  alpha: Uint8Array
+  color: Uint8Array
+} | null {
+  const pixels = tileSize * tileSize
+  const tileBytes = pixels * 4
+  const col = USED_CELLS % GRID_COLS
+  const row = Math.floor(USED_CELLS / GRID_COLS)
+
+  // Extract cell 17: the plain base tile.
+  const baseTile = new Uint8ClampedArray(tileBytes)
+  for (let y = 0; y < tileSize; y++) {
+    const from = ((row * tileSize + y) * sheet.width + col * tileSize) * 4
+    baseTile.set(
+      sheet.data.subarray(from, from + tileSize * 4),
+      y * tileSize * 4,
+    )
+  }
+  let hasBase = false
+  for (let i = 3; i < tileBytes; i += 4) {
+    if (baseTile[i] !== 0) {
+      hasBase = true
+      break
+    }
+  }
+  if (!hasBase) {
+    return null
+  }
+
+  const base = new Uint8ClampedArray(USED_CELLS * tileBytes)
+  for (let cell = 0; cell < USED_CELLS; cell++) {
+    base.set(baseTile, cell * tileBytes)
+  }
+  const alpha = new Uint8Array(USED_CELLS * pixels)
+  const color = new Uint8Array(USED_CELLS * pixels * 4)
+
+  for (let cell = 0; cell < USED_CELLS; cell++) {
+    const cellCol = cell % GRID_COLS
+    const cellRow = Math.floor(cell / GRID_COLS)
+    for (let y = 0; y < tileSize; y++) {
+      for (let x = 0; x < tileSize; x++) {
+        const pixel = cell * pixels + y * tileSize + x
+        const from =
+          ((cellRow * tileSize + y) * sheet.width +
+            cellCol * tileSize +
+            x) *
+          4
+        const tile = (y * tileSize + x) * 4
+        const same =
+          sheet.data[from] === baseTile[tile] &&
+          sheet.data[from + 1] === baseTile[tile + 1] &&
+          sheet.data[from + 2] === baseTile[tile + 2] &&
+          sheet.data[from + 3] === baseTile[tile + 3]
+        if (same) {
+          alpha[pixel] = 1
+          continue
+        }
+        if (sheet.data[from + 3] === 0) {
+          // Cut out over an opaque base pixel: the mask stays 0.
+          continue
+        }
+        // Differing opaque pixel: a hand-painted colour over a hidden base.
+        color[pixel * 4] = sheet.data[from]
+        color[pixel * 4 + 1] = sheet.data[from + 1]
+        color[pixel * 4 + 2] = sheet.data[from + 2]
+        color[pixel * 4 + 3] = 255
+      }
+    }
+  }
+  return { base, alpha, color }
+}
+
+/**
+ * Initialise a new document from an uploaded texture and an optional template
+ * URL. The upload is either a square sprite (replicated into the base, layer
+ * 1) or a full 7x3 sheet. A sheet with the plain base tile in cell 17
+ * rebuilds the previous state: shared base, derived alpha mask and painted
+ * colours. Any other sheet keeps its own pixels per cell. The color layer
+ * (layer 3) starts empty otherwise; the template provides the initial binary
+ * alpha mask (layer 2). Without a template, the mask starts fully opaque so
+ * the base texture stays visible.
  */
 export async function initDocument(
   spriteBlob: Blob,
@@ -64,12 +186,24 @@ export async function initDocument(
   backgroundBlob: Blob | null = null,
 ): Promise<void> {
   const spriteImage = await decodeImageFromBlob(spriteBlob)
-  const error = validateSprite(spriteImage)
+  const isSheet =
+    spriteImage.width % GRID_COLS === 0 &&
+    spriteImage.height === (spriteImage.width / GRID_COLS) * GRID_ROWS
+  let error: string | null
+  let n: number
+  if (isSheet) {
+    n = spriteImage.width / GRID_COLS
+    error =
+      n < 16 || n > 256
+        ? `Sheet tiles must be between 16x and 256x, got ${n}px.`
+        : null
+  } else {
+    error = validateSprite(spriteImage)
+    n = spriteImage.width
+  }
   if (error !== null) {
     throw new Error(error)
   }
-
-  const n = spriteImage.width
   const pixels = n * n
 
   let background: Uint8ClampedArray | null = null
@@ -87,16 +221,29 @@ export async function initDocument(
     background = new Uint8ClampedArray(backgroundImage.data)
   }
 
-  const base = new Uint8ClampedArray(spriteImage.data)
-  // Layer 3 starts empty: alpha byte 0 marks every pixel as unpainted.
-  const color = new Uint8Array(USED_CELLS * pixels * 4)
+  // A sheet with the base tile in cell 17 rebuilds its editing state; other
+  // uploads start from per-cell pixels with no paint. The derived mask wins
+  // over the template select: it is the sheet's own state.
+  const rebuilt = isSheet ? sheetStateFromBaseTile(spriteImage, n) : null
+  const base =
+    rebuilt !== null ? rebuilt.base : baseFromSprite(spriteImage, n, isSheet)
+  const color =
+    rebuilt !== null
+      ? rebuilt.color
+      : // Layer 3 starts empty: alpha byte 0 marks every pixel as unpainted.
+        new Uint8Array(USED_CELLS * pixels * 4)
 
-  // Without a template the whole base texture stays visible.
-  let alpha: Uint8Array = new Uint8Array(USED_CELLS * pixels).fill(1)
-  if (templateUrl !== null) {
-    alpha = await decodeImageFromUrl(templateUrl).then((templateImage) =>
-      alphaFromTemplate(templateImage, n),
-    )
+  let alpha: Uint8Array
+  if (rebuilt !== null) {
+    alpha = rebuilt.alpha
+  } else {
+    // Without a template the whole base texture stays visible.
+    alpha = new Uint8Array(USED_CELLS * pixels).fill(1)
+    if (templateUrl !== null) {
+      alpha = await decodeImageFromUrl(templateUrl).then((templateImage) =>
+        alphaFromTemplate(templateImage, n),
+      )
+    }
   }
 
   const palette = extractPalette(spriteImage)
@@ -317,7 +464,7 @@ export function pickPixel(cell: number, x: number, y: number): void {
     return
   }
   const pixel = cell * tileSize * tileSize + y * tileSize + x
-  // `color` spans all 17 cells; `base` and `background` are single tiles.
+  // `color` and `base` span all 17 cells; `background` is a single tile.
   const colorSource = pixel * 4
   const tileSource = (y * tileSize + x) * 4
   const painted = color[colorSource + 3] === 255
@@ -325,7 +472,7 @@ export function pickPixel(cell: number, x: number, y: number): void {
     painted === true
       ? { array: color, source: colorSource }
       : alpha[pixel] === 1
-        ? { array: base, source: tileSource }
+        ? { array: base, source: colorSource }
         : background !== null
           ? { array: background, source: tileSource }
           : null

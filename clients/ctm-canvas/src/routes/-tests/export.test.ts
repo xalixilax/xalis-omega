@@ -53,15 +53,18 @@ describe('propertiesFileName', () => {
 describe('composeOverlaySheet', () => {
   function makeSheets(tileSize: number) {
     const pixels = tileSize * tileSize
-    const base = new Uint8ClampedArray(pixels * 4)
-    for (let i = 0; i < pixels; i++) {
+    // The base is per cell: every cell starts from the same opaque tile.
+    const base = new Uint8ClampedArray(17 * pixels * 4)
+    for (let i = 0; i < 17 * pixels; i++) {
       base[i * 4] = 200
       base[i * 4 + 1] = 200
       base[i * 4 + 2] = 200
       base[i * 4 + 3] = 255
     }
     // Base pixel 1 is transparent inside the sprite itself.
-    base[1 * 4 + 3] = 0
+    for (let cell = 0; cell < 17; cell++) {
+      base[(cell * pixels + 1) * 4 + 3] = 0
+    }
     const alpha = new Uint8Array(17 * pixels)
     const color = new Uint8Array(17 * pixels * 4)
     // Cell 0 pixel 0: painted red on top of the mask.
@@ -104,13 +107,20 @@ describe('composeOverlaySheet', () => {
     // sits at sheet row 1, so its target starts at (1*2)*14*4.
     expect([data[56], data[57], data[58], data[59]]).toEqual([9, 0, 0, 255])
 
-    // Padding cells (17-20) stay fully transparent: check cell 20 (row 2, col 6).
-    const paddingPixel = (2 * 2 + 0) * 14 * 4 + 6 * 2 * 4 + 12
-    expect(data[paddingPixel + 3]).toBe(0)
-
     // Cell 5 pixel 3 (x=1, y=1): masked base shows the shared sprite.
     const cell5Pixel = (0 * 2 + 1) * 14 * 4 + (5 * 2 + 1) * 4
     expect([data[cell5Pixel], data[cell5Pixel + 3]]).toEqual([200, 255])
+
+    // Cell 17 (row 2, col 3): the plain base tile, mask and paint ignored.
+    const cell17Pixel = (2 * 2 + 0) * 14 * 4 + (3 * 2 + 0) * 4
+    expect([data[cell17Pixel], data[cell17Pixel + 3]]).toEqual([200, 255])
+    // Its transparent base pixel stays transparent.
+    const cell17Transparent = (2 * 2 + 0) * 14 * 4 + (3 * 2 + 1) * 4
+    expect(data[cell17Transparent + 3]).toBe(0)
+
+    // Padding cells 18-20 stay fully transparent: check cell 20 (row 2, col 6).
+    const paddingPixel = (2 * 2 + 0) * 14 * 4 + 6 * 2 * 4 + 12
+    expect(data[paddingPixel + 3]).toBe(0)
   })
 
   it('round-trips through PNG encode/decode sizes', async () => {

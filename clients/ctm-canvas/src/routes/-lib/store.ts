@@ -17,7 +17,9 @@ export type EditorState = {
   tileSize: number | null
   baseName: string
   /**
-   * Layer 1: RGBA of the uploaded sprite, N*N*4. Read-only; never modified.
+   * Layer 1: RGBA per pixel per cell, 17*N*N*4. Read-only; never modified.
+   * A single-tile sprite is replicated into every cell; an imported 7x3
+   * sheet keeps its own pixels per cell.
    */
   base: Uint8ClampedArray | null
   /**

@@ -10,7 +10,8 @@ import { USED_CELLS } from '../-lib/sheet'
 const STORAGE_KEY = 'ctm-canvas:v2'
 
 type SavedState = {
-  v: 2
+  /** v2 stored a single-tile base; v3 stores a per-cell base. */
+  v: 2 | 3
   tileSize: number
   baseName: string
   palette: string[]
@@ -42,7 +43,7 @@ function serialize(state: EditorState): SavedState | null {
     return null
   }
   return {
-    v: 2,
+    v: 3,
     tileSize: state.tileSize,
     baseName: state.baseName,
     palette: state.palette,
@@ -73,15 +74,23 @@ function deserialize(saved: SavedState): Partial<EditorState> | null {
   }
   const pixels = tileSize * tileSize
   try {
-    const base = base64ToBytes(saved.baseB64)
+    let base = base64ToBytes(saved.baseB64)
     const alpha = base64ToBytes(saved.alphaB64)
     const color = base64ToBytes(saved.colorB64)
     const background =
       typeof saved.backgroundB64 === 'string'
         ? base64ToBytes(saved.backgroundB64)
         : null
+    // v2 sessions carried one shared tile: replicate it into every cell.
+    if (base.length === pixels * 4) {
+      const replicated = new Uint8Array(USED_CELLS * pixels * 4)
+      for (let cell = 0; cell < USED_CELLS; cell++) {
+        replicated.set(base, cell * pixels * 4)
+      }
+      base = replicated
+    }
     if (
-      base.length !== pixels * 4 ||
+      base.length !== USED_CELLS * pixels * 4 ||
       alpha.length !== USED_CELLS * pixels ||
       color.length !== USED_CELLS * pixels * 4 ||
       (background !== null && background.length !== pixels * 4)
@@ -144,7 +153,7 @@ export function useAutosave(): void {
         if (
           typeof parsed === 'object' &&
           parsed !== null &&
-          (parsed as SavedState).v === 2 &&
+          ((parsed as SavedState).v === 2 || (parsed as SavedState).v === 3) &&
           window.confirm('Restore your previous editing session?')
         ) {
           const restored = deserialize(parsed as SavedState)
