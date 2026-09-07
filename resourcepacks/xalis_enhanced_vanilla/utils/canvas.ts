@@ -17,7 +17,7 @@ export type SplitOptions = {
  * @param gridHeight Height of the grid
  * @param options Possible options for the split function
  */
-export async function split(
+async function split(
 	input: string,
 	output: string,
 	gridWidth: number,

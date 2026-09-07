@@ -1,0 +1,170 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,900&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@source "../../src";
+
+@custom-variant dark (&:is(.dark *));
+
+/* xali legacy palette — lifted from xalixilax.github.io/archive/css/style.css */
+:root {
+  --yellow: #deaa3b;
+  --yellow-dark: #d28026;
+  --yellow-darker: #ae5a11;
+  --red: #d32f2f;
+  --red-dark: #b71c1c;
+  --red-darker: #921111;
+  --red-lighter: #f8d7da;
+  --discord: #5865f2;
+  --discord-dark: #434dc4;
+  --discord-darker: #2e3691;
+  --gray: #6b6e70;
+  --gray-dark: #474b4f;
+  --gray-darker: #222629;
+  --light-gray: #f0f0f0;
+  --dark-bg: #1f2228;
+  --card-dark: #1a1d21;
+  --teal: #26a69a;
+  --type-label: #7e7e7e;
+
+  --background: var(--light-gray);
+  --foreground: var(--gray-darker);
+  --card: #ffffff;
+  --card-foreground: var(--gray-darker);
+  --popover: #ffffff;
+  --popover-foreground: var(--gray-darker);
+  --primary: var(--yellow);
+  --primary-foreground: #ffffff;
+  --secondary: var(--gray);
+  --secondary-foreground: #ffffff;
+  --muted: var(--light-gray);
+  --muted-foreground: var(--gray);
+  --accent: var(--teal);
+  --accent-foreground: #ffffff;
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
+  --border: #e2e2e2;
+  --input: #e2e2e2;
+  --ring: var(--yellow);
+  --radius: 0px;
+}
+
+@theme inline {
+  --font-sans: 'Montserrat', sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-yellow: var(--yellow);
+  --color-yellow-dark: var(--yellow-dark);
+  --color-yellow-darker: var(--yellow-darker);
+  --color-red: var(--red);
+  --color-red-dark: var(--red-dark);
+  --color-discord: var(--discord);
+  --color-discord-dark: var(--discord-dark);
+  --color-gray: var(--gray);
+  --color-gray-dark: var(--gray-dark);
+  --color-gray-darker: var(--gray-darker);
+  --color-light-gray: var(--light-gray);
+  --color-dark-bg: var(--dark-bg);
+  --color-card-dark: var(--card-dark);
+  --color-teal: var(--teal);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--light-gray);
+    color: var(--foreground);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+  }
+
+  a {
+    color: var(--discord-dark);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  a:visited {
+    color: var(--red-dark);
+  }
+}
+
+@layer components {
+  /* Minecraft-style multi-layer text shadow (legacy h2) */
+  .text-shadow-mc {
+    text-shadow:
+      0 0.03em var(--tw-shadow-color, var(--yellow-dark)),
+      0 0.06em var(--tw-shadow-color, var(--yellow-dark)),
+      0 0.09em var(--tw-shadow-color, var(--yellow-dark));
+  }
+
+  /* Sloped sections (legacy #carousel / #updates clip-paths) */
+  .slope {
+    --slope-a: 0px;
+    --slope-b: 0px;
+    --slope-c: 0px;
+    --slope-d: 0px;
+    clip-path: polygon(var(--slope-a) 0, 100% var(--slope-b), 100% calc(100% - var(--slope-c)), 0 calc(100% - var(--slope-d)));
+    padding-top: max(var(--slope-a), var(--slope-b));
+    padding-bottom: max(var(--slope-c), var(--slope-d));
+  }
+
+  .slope-s {
+    --slope-a: 4vw;
+    --slope-d: 4vw;
+  }
+
+  .slope-e {
+    --slope-b: 4vw;
+    --slope-c: 4vw;
+  }
+
+  .slope-so {
+    --slope-b: 4vw;
+    --slope-d: 4vw;
+  }
+
+  .slope-sb {
+    --slope-d: 4vw;
+  }
+
+  .slope-et {
+    --slope-b: 4vw;
+  }
+
+  .pixelated {
+    image-rendering: pixelated;
+  }
+
+  .card-shadow {
+    box-shadow: 1px 5px 5px grey;
+  }
+}

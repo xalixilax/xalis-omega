@@ -66,139 +66,139 @@ export type CtmLayer = "cutout_mipped" | "cutout" | "translucent";
  * Contains properties common to all CTM methods.
  */
 export class CtmPropertiesBase {
-		/**
-		 * Method to use when choosing a block's replacement texture.
-		 * This will be narrowed down in specific subclasses.
-		 * Required.
-		 */
-		method: CtmMethod;
+	/**
+	 * Method to use when choosing a block's replacement texture.
+	 * This will be narrowed down in specific subclasses.
+	 * Required.
+	 */
+	method: CtmMethod;
 
-		/**
-		 * Space-separated list of replacement tiles to use.
-		 * Tiles can be names (name -> name.png), ranges (0-3 -> 0.png, 1.png...),
-		 * full paths, '<skip>' (for overlays), or '<default>'.
-		 * The number of required tiles depends on the method.
-		 * Required.
-		 */
-		tiles: string;
+	/**
+	 * Space-separated list of replacement tiles to use.
+	 * Tiles can be names (name -> name.png), ranges (0-3 -> 0.png, 1.png...),
+	 * full paths, '<skip>' (for overlays), or '<default>'.
+	 * The number of required tiles depends on the method.
+	 * Required.
+	 */
+	tiles: string;
 
-		/**
-		 * Optional. List of tiles (e.g., "minecraft:block/stone") this method should apply to.
-		 * Space-separated string.
-		 */
-		matchTiles?: string;
+	/**
+	 * Optional. List of tiles (e.g., "minecraft:block/stone") this method should apply to.
+	 * Space-separated string.
+	 */
+	matchTiles?: string;
 
-		/**
-		 * Optional. List of blocks this method should apply to.
-		 * Format: [namespace:]name[:property1=value1,value2...:property2=value1,value2...]
-		 * Space-separated string.
-		 * Can often be inferred from filename (e.g., /ctm/stone/block_stone.properties -> matchBlocks=stone).
-		 */
-		matchBlocks?: string;
+	/**
+	 * Optional. List of blocks this method should apply to.
+	 * Format: [namespace:]name[:property1=value1,value2...:property2=value1,value2...]
+	 * Space-separated string.
+	 * Can often be inferred from filename (e.g., /ctm/stone/block_stone.properties -> matchBlocks=stone).
+	 */
+	matchBlocks?: string;
 
-		/**
-		 * Optional. The conditions under which two blocks should connect.
-		 * 'block': Connect if block names match.
-		 * 'tile': Connect if block tile textures match.
-		 * 'state': Connect if block full states match.
-		 * Default depends on context (block for matchBlocks, tile for matchTiles).
-		 */
-		connect?: CtmConnectType;
+	/**
+	 * Optional. The conditions under which two blocks should connect.
+	 * 'block': Connect if block names match.
+	 * 'tile': Connect if block tile textures match.
+	 * 'state': Connect if block full states match.
+	 * Default depends on context (block for matchBlocks, tile for matchTiles).
+	 */
+	connect?: CtmConnectType;
 
-		/**
-		 * Optional. Limit CTM to certain faces of the block.
-		 * Space-separated list of 'bottom', 'top', 'north', 'south', 'east', 'west', 'sides', 'all'.
-		 */
-		faces?: CtmFace[]; // Could be refined to CtmFace[] if parsing is done elsewhere
+	/**
+	 * Optional. Limit CTM to certain faces of the block.
+	 * Space-separated list of 'bottom', 'top', 'north', 'south', 'east', 'west', 'sides', 'all'.
+	 */
+	faces?: CtmFace[]; // Could be refined to CtmFace[] if parsing is done elsewhere
 
-		/**
-		 * Optional. Space-separated list of biome names.
-		 * If the first character is '!', the list is inverted (matches biomes *not* in the list).
-		 */
-		biomes?: string;
+	/**
+	 * Optional. Space-separated list of biome names.
+	 * If the first character is '!', the list is inverted (matches biomes *not* in the list).
+	 */
+	biomes?: string;
 
-		/**
-		 * Optional. Space-separated list of height restrictions.
-		 * Can be individual integers or ranges (e.g., "0-63 128 200-255").
-		 */
-		heights?: string;
+	/**
+	 * Optional. Space-separated list of height restrictions.
+	 * Can be individual integers or ranges (e.g., "0-63 128 200-255").
+	 */
+	heights?: string;
 
-		/**
-		 * Optional. Only applies to blocks with nameable tile entities (chests, furnaces, etc.).
-		 * Matches based on the custom name given to the block in-game.
-		 * Value can use glob patterns (*, ?). Example: name=ipattern:*Chest*
-		 */
-		name?: string;
+	/**
+	 * Optional. Only applies to blocks with nameable tile entities (chests, furnaces, etc.).
+	 * Matches based on the custom name given to the block in-game.
+	 * Value can use glob patterns (*, ?). Example: name=ipattern:*Chest*
+	 */
+	name?: string;
 
-		/**
-		 * Optional. If multiple properties files match the same block/tile,
-		 * the one with the highest weight is used. Default is 0.
-		 * (Note: This 'weight' property is mentioned in the JSON schema but not
-		 * explicitly in the general properties text, adding it based on schema).
-		 */
-		weight?: number;
+	/**
+	 * Optional. If multiple properties files match the same block/tile,
+	 * the one with the highest weight is used. Default is 0.
+	 * (Note: This 'weight' property is mentioned in the JSON schema but not
+	 * explicitly in the general properties text, adding it based on schema).
+	 */
+	weight?: number;
 
-		// Constructor to initialize properties (optional, but good practice)
-		constructor(data: Partial<CtmPropertiesBase>) {
-			// Required properties must be provided or handled appropriately
-			if (!data.method) throw new Error("CTM property 'method' is required.");
-			if (!data.tiles) throw new Error("CTM property 'tiles' is required.");
+	// Constructor to initialize properties (optional, but good practice)
+	constructor(data: Partial<CtmPropertiesBase>) {
+		// Required properties must be provided or handled appropriately
+		if (!data.method) throw new Error("CTM property 'method' is required.");
+		if (!data.tiles) throw new Error("CTM property 'tiles' is required.");
 
-			this.method = data.method;
-			this.tiles = data.tiles;
-			this.matchTiles = data.matchTiles;
-			this.matchBlocks = data.matchBlocks;
-			this.connect = data.connect;
-			this.faces = data.faces;
-			this.biomes = data.biomes;
-			this.heights = data.heights;
-			this.name = data.name;
-			this.weight = data.weight;
-		}
-
-		toString(): string {
-			const properties: string[] = [];
-
-			for (const key in this) {
-				const value = this[key as keyof this];
-
-				switch (key) {
-					case "faces":
-						if (value && Array.isArray(value)) {
-							properties.push(`faces=${value.join(" ")}`);
-						}
-						break;
-					case "connectBlocks":
-						if (value) {
-							properties.push(
-								`connectBlocks=${Array.from(value as unknown as Set<string>).join(" ")}`,
-							);
-						}
-						break;
-					default:
-						if (value !== undefined) {
-							properties.push(
-								`${key}=${CtmPropertiesBase.dedupeTokens(key, String(value))}`,
-							);
-						}
-				}
-			}
-
-			return properties.join("\n");
-		}
-
-		private static dedupeTokens(key: string, value: string): string {
-			if (!["matchBlocks", "biomes", "matchTiles", "tiles", "connectTiles"].includes(key)) {
-				return value;
-			}
-
-			return [...new Set(value.split(/\s+/).filter(Boolean))].join(" ");
-		}
-
-		test(): void {
-			console.log(this.toString());
-		}
+		this.method = data.method;
+		this.tiles = data.tiles;
+		this.matchTiles = data.matchTiles;
+		this.matchBlocks = data.matchBlocks;
+		this.connect = data.connect;
+		this.faces = data.faces;
+		this.biomes = data.biomes;
+		this.heights = data.heights;
+		this.name = data.name;
+		this.weight = data.weight;
 	}
+
+	toString(): string {
+		const properties: string[] = [];
+
+		for (const key in this) {
+			const value = this[key as keyof this];
+
+			switch (key) {
+				case "faces":
+					if (value && Array.isArray(value)) {
+						properties.push(`faces=${value.join(" ")}`);
+					}
+					break;
+				case "connectBlocks":
+					if (value) {
+						properties.push(
+							`connectBlocks=${Array.from(value as unknown as Set<string>).join(" ")}`,
+						);
+					}
+					break;
+				default:
+					if (value !== undefined) {
+						properties.push(
+							`${key}=${CtmPropertiesBase.dedupeTokens(key, String(value))}`,
+						);
+					}
+			}
+		}
+
+		return properties.join("\n");
+	}
+
+	private static dedupeTokens(key: string, value: string): string {
+		if (!["matchBlocks", "biomes", "matchTiles", "tiles", "connectTiles"].includes(key)) {
+			return value;
+		}
+
+		return [...new Set(value.split(/\s+/).filter(Boolean))].join(" ");
+	}
+
+	test(): void {
+		console.log(this.toString());
+	}
+}
 
 // =============================================================================
 // Specific Method Classes
@@ -244,14 +244,14 @@ export class CtmPropertiesCtmCompact extends CtmPropertiesBase {
 	 * Example: `ctm.5=my_custom_tile_for_case_5`
 	 */
 	[key: `ctm.${number}`]:
-		| string
-		| number
-		| undefined
-		| boolean
-		| CtmConnectType
-		| CtmMethod
-		| CtmSymmetry
-		| CtmLayer; // Index signature for ctm.N properties
+	| string
+	| number
+	| undefined
+	| boolean
+	| CtmConnectType
+	| CtmMethod
+	| CtmSymmetry
+	| CtmLayer; // Index signature for ctm.N properties
 
 	constructor(data: Omit<Partial<CtmPropertiesCtmCompact>, "method">) {
 		super({ ...data, method: "ctm_compact" });
