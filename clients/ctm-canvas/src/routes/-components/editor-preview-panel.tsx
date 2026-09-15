@@ -8,6 +8,16 @@ import {
   templateViewComposition,
 } from '../-lib/template-view'
 import { alphaTemplates } from '../-lib/templates'
+import { buttonVariants } from '@design-system/components/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardMedia,
+  CardType,
+} from '@design-system/components/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@design-system/components/select'
+import { cn } from '@design-system/lib/utils'
 
 /**
  * Right panel: a block field that shows the final result. The field size
@@ -22,6 +32,7 @@ export function EditorPreviewPanel() {
   const revision = useEditor((state) => state.revision)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [templateId, setTemplateId] = useState<string>('')
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -121,6 +132,17 @@ export function EditorPreviewPanel() {
     }
   }
 
+  function handleTemplateChange(id: string): void {
+    setTemplateId('')
+    if (id === '') {
+      return
+    }
+    const template = alphaTemplates.find((entry) => entry.id === id)
+    if (template !== undefined) {
+      void loadTemplate(template.url)
+    }
+  }
+
   function handleFile(event: React.ChangeEvent<HTMLInputElement>): void {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -131,54 +153,58 @@ export function EditorPreviewPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-zinc-400">Result preview</h2>
-      <canvas
-        ref={canvasRef}
-        width={width}
-        height={height}
-        title={`${cols}x${rows} composition of the sheet tiles over the background`}
-        className="pixelated block h-auto w-full rounded-sm border border-zinc-800"
-      />
-      <div className="flex flex-wrap items-center gap-1.5">
-        <select
-          value=""
-          onChange={(event) => {
-            const template = alphaTemplates.find(
-              (entry) => entry.id === event.target.value,
-            )
-            if (template !== undefined) {
-              void loadTemplate(template.url)
-            }
-          }}
-          className="min-w-0 flex-1 rounded border border-zinc-700 bg-zinc-950 px-2 py-1 text-xs text-zinc-300"
-        >
-          <option value="">Apply alpha template...</option>
-          {alphaTemplates.map((template) => (
-            <option key={template.id} value={template.id}>
-              {template.label}
-            </option>
-          ))}
-        </select>
-        <label className="cursor-pointer rounded border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-500">
-          Load PNG...
-          <input
-            type="file"
-            accept="image/png"
-            onChange={handleFile}
-            className="hidden"
-          />
-        </label>
-      </div>
-      {error !== null && (
-        <p className="text-xs text-red-400" role="alert">
-          {error}
-        </p>
-      )}
-      <p className="text-xs text-zinc-500">
-        {cols}x{rows} blocks over the background. Tiles merge per block; 17 =
-        base tile.
-      </p>
-    </div>
+    <Card>
+      <CardMedia className="p-3 pt-8">
+        <CardType>Result preview</CardType>
+        <canvas
+          ref={canvasRef}
+          width={width}
+          height={height}
+          title={`${cols}x${rows} composition of the sheet tiles over the background`}
+          className="pixelated block h-auto w-full"
+        />
+      </CardMedia>
+      <CardContent className="gap-3">
+        <div className="flex items-center gap-1.5">
+          <Select
+            value={templateId}
+            onValueChange={(value) => handleTemplateChange(value ?? '')}
+          >
+            <SelectTrigger className="h-10 px-3 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Apply alpha template...</SelectItem>
+              {alphaTemplates.map((template) => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <label
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'cursor-pointer')}
+            title="Load a mask PNG exported from the alpha sheet"
+          >
+            Load PNG...
+            <input
+              type="file"
+              accept="image/png"
+              onChange={handleFile}
+              className="sr-only"
+            />
+          </label>
+        </div>
+        {error !== null && (
+          <p className="text-xs text-destructive" role="alert">
+            {error}
+          </p>
+        )}
+        <CardDescription>
+          {cols}x{rows} blocks over the background. Tiles merge per block; 17 =
+          base tile.
+        </CardDescription>
+      </CardContent>
+    </Card>
   )
 }

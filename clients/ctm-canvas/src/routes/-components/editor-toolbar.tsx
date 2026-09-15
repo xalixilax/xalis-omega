@@ -1,5 +1,12 @@
 import { useRef, useState } from 'react'
 import { Eraser, Hand, Paintbrush, Pipette, X } from 'lucide-react'
+import { Button, buttonVariants } from '@design-system/components/button'
+import { Card, CardContent } from '@design-system/components/card'
+import { Checkbox } from '@design-system/components/checkbox'
+import { Label } from '@design-system/components/label'
+import { Slider } from '@design-system/components/slider'
+import { Tabs, TabsList, TabsTrigger } from '@design-system/components/tabs'
+import { cn } from '@design-system/lib/utils'
 import {
   setActiveLayer,
   setBackground,
@@ -65,182 +72,169 @@ export function EditorToolbar() {
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Tool
-        </span>
-        {TOOLS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setTool(id)}
-            aria-pressed={tool === id}
-            className={`flex items-center gap-1.5 rounded border px-3 py-1.5 text-sm ${
-              tool === id
-                ? 'border-sky-500 bg-sky-950 text-sky-200'
-                : 'border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-zinc-600'
-            }`}
-          >
-            <Icon size={14} />
-            {label}
-          </button>
-        ))}
+    <Card>
+      <CardContent className="flex flex-col gap-3 p-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex items-center gap-2">
+            <Label>Tool</Label>
+            <Tabs value={tool} onValueChange={(value) => setTool(value as Tool)}>
+              <TabsList>
+                {TOOLS.map(({ id, label, icon: Icon }) => (
+                  <TabsTrigger key={id} value={id} className="flex-none">
+                    <Icon />
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
 
-        <span className="ml-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Brush
-        </span>
-        <input
-          type="range"
-          min={1}
-          max={64}
-          step={1}
-          value={brushSize}
-          onChange={(event) => setBrushSize(Number(event.target.value))}
-          title="Brush size (Ctrl/Cmd + mouse wheel over the canvas)"
-          className="w-24 accent-sky-500"
-        />
-        <span className="w-9 text-xs tabular-nums text-zinc-400">
-          {brushSize} px
-        </span>
-
-        <span className="ml-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Draw on
-        </span>
-        <div className="flex overflow-hidden rounded border border-zinc-800">
-          {LAYERS.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveLayer(id)}
-              aria-pressed={activeLayer === id}
-              className={`px-3 py-1.5 text-sm ${
-                activeLayer === id
-                  ? 'bg-fuchsia-950 text-fuchsia-200'
-                  : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <span className="ml-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
-          View
-        </span>
-        <div className="flex overflow-hidden rounded border border-zinc-800">
-          {VIEW_MODES.map(({ id, label }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setViewMode(id)}
-              aria-pressed={viewMode === id}
-              className={`px-3 py-1.5 text-sm ${
-                viewMode === id
-                  ? 'bg-emerald-950 text-emerald-200'
-                  : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-300">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={overlayVisible}
-            onChange={(event) => setOverlayVisible(event.target.checked)}
-            className="accent-sky-500"
-          />
-          Overlay
-        </label>
-
-        <label
-          className="flex items-center gap-2"
-          title="Per-tile connection guides (dashed side/corner markers)"
-        >
-          <input
-            type="checkbox"
-            checked={guidesVisible}
-            onChange={(event) => setGuidesVisible(event.target.checked)}
-            className="accent-sky-500"
-          />
-          Guides
-        </label>
-
-        <label
-          className={`flex items-center gap-2 ${
-            hasBackground ? '' : 'opacity-40'
-          }`}
-          title="Opacity of the background layer used to test overlays"
-        >
-          Background
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={backgroundOpacity}
-            disabled={!hasBackground}
-            onChange={(event) =>
-              setBackgroundOpacity(Number(event.target.value))
-            }
-            className="w-32 accent-emerald-500"
-          />
-          <span className="w-9 text-right text-xs tabular-nums text-zinc-400">
-            {backgroundOpacity}%
-          </span>
-        </label>
-
-        <div className="flex items-center gap-1.5">
-          <span
-            className={`h-2 w-2 rounded-full ${
-              hasBackground ? 'bg-emerald-400' : 'bg-zinc-600'
-            }`}
-            title={hasBackground ? 'Custom background set' : 'No background'}
-          />
-          <label className="cursor-pointer rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs hover:border-zinc-600">
-            Background...
-            <input
-              ref={backgroundInputRef}
-              type="file"
-              accept="image/png"
-              onChange={handleBackgroundChange}
-              className="sr-only"
+          <div className="flex items-center gap-2">
+            <Label>Brush</Label>
+            <Slider
+              value={brushSize}
+              onValueChange={setBrushSize}
+              min={1}
+              max={64}
+              className="w-28"
             />
-          </label>
-          {hasBackground && (
-            <button
-              type="button"
-              onClick={() => {
-                setBackgroundError(null)
-                void setBackground(null)
-              }}
-              title="Remove the custom background"
-              className="rounded border border-zinc-800 bg-zinc-900 p-1 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+            <span
+              className="w-12 text-xs tabular-nums text-muted-foreground"
+              title="Brush size (Ctrl/Cmd + mouse wheel over the canvas)"
             >
-              <X size={12} />
-            </button>
-          )}
+              {brushSize} px
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label>Draw on</Label>
+            <Tabs
+              value={activeLayer}
+              onValueChange={(value) => setActiveLayer(value as ActiveLayer)}
+            >
+              <TabsList>
+                {LAYERS.map(({ id, label }) => (
+                  <TabsTrigger key={id} value={id} className="flex-none">
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Label>View</Label>
+            <Tabs
+              value={viewMode}
+              onValueChange={(value) => setViewMode(value as ViewMode)}
+            >
+              <TabsList>
+                {VIEW_MODES.map(({ id, label }) => (
+                  <TabsTrigger key={id} value={id} className="flex-none">
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
 
-        {backgroundError !== null && (
-          <span className="text-xs text-red-400" role="alert">
-            {backgroundError}
-          </span>
-        )}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-dark">
+            <Checkbox
+              checked={overlayVisible}
+              onCheckedChange={(checked) => setOverlayVisible(checked === true)}
+            />
+            Overlay
+          </label>
 
-        <span className="text-xs text-zinc-500">
-          {activeLayer === 'alpha'
-            ? 'Alpha layer: paint shows base pixels, erase hides them.'
-            : 'Color layer: paint hand colours, erase removes them. The alpha mask never applies here.'}{' '}
-          Right-click always erases. Ctrl/Cmd+wheel resizes the brush.
-          Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
-        </span>
-      </div>
-    </div>
+          <label
+            className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-dark"
+            title="Per-tile connection guides (dashed side/corner markers)"
+          >
+            <Checkbox
+              checked={guidesVisible}
+              onCheckedChange={(checked) => setGuidesVisible(checked === true)}
+            />
+            Guides
+          </label>
+
+          <label
+            className={cn(
+              'flex items-center gap-2 text-sm font-semibold text-gray-dark',
+              hasBackground ? '' : 'opacity-40',
+            )}
+            title="Opacity of the background layer used to test overlays"
+          >
+            Background
+            <Slider
+              value={backgroundOpacity}
+              onValueChange={setBackgroundOpacity}
+              min={0}
+              max={100}
+              step={5}
+              disabled={!hasBackground}
+              className="w-32"
+            />
+            <span className="w-9 text-right text-xs tabular-nums text-muted-foreground">
+              {backgroundOpacity}%
+            </span>
+          </label>
+
+          <div className="flex items-center gap-1.5">
+            <span
+              className={cn(
+                'size-2',
+                hasBackground ? 'bg-yellow' : 'bg-[var(--border)]',
+              )}
+              title={hasBackground ? 'Custom background set' : 'No background'}
+            />
+            <label
+              className={cn(
+                buttonVariants({ variant: 'outline', size: 'sm' }),
+                'cursor-pointer',
+              )}
+              title="Load a background texture to test the overlay"
+            >
+              Background...
+              <input
+                ref={backgroundInputRef}
+                type="file"
+                accept="image/png"
+                onChange={handleBackgroundChange}
+                className="sr-only"
+              />
+            </label>
+            {hasBackground && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setBackgroundError(null)
+                  void setBackground(null)
+                }}
+                title="Remove the custom background"
+              >
+                <X />
+              </Button>
+            )}
+          </div>
+
+          {backgroundError !== null && (
+            <span className="text-xs text-destructive" role="alert">
+              {backgroundError}
+            </span>
+          )}
+
+          <span className="text-xs tracking-[0.03em] text-muted-foreground">
+            {activeLayer === 'alpha'
+              ? 'Alpha layer: paint shows base pixels, erase hides them.'
+              : 'Color layer: paint hand colours, erase removes them. The alpha mask never applies here.'}{' '}
+            Right-click always erases. Ctrl/Cmd+wheel resizes the brush.
+            Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

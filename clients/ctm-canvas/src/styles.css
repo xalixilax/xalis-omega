@@ -1,5 +1,1 @@
-@import 'tailwindcss';
-
-.pixelated {
-  image-rendering: pixelated;
-}
+@import '@design-system/styles/global.css';

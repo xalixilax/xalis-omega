@@ -232,7 +232,7 @@ export function EditorPixelCanvas() {
   return (
     <div
       ref={scrollRef}
-      className="overflow-auto rounded-md border border-zinc-800 bg-zinc-900 p-2"
+      className="card-shadow overflow-auto rounded-t-[5px] bg-card-dark p-3"
     >
       <div
         className="relative mx-auto"
@@ -269,7 +269,7 @@ export function EditorPixelCanvas() {
               y1={0}
               x2={index + 1}
               y2={GRID_ROWS}
-              stroke="#3f3f46"
+              stroke="rgba(255, 255, 255, 0.12)"
               strokeWidth={1}
               vectorEffect="non-scaling-stroke"
             />
@@ -281,7 +281,7 @@ export function EditorPixelCanvas() {
               y1={index + 1}
               x2={GRID_COLS}
               y2={index + 1}
-              stroke="#3f3f46"
+              stroke="rgba(255, 255, 255, 0.12)"
               strokeWidth={1}
               vectorEffect="non-scaling-stroke"
             />

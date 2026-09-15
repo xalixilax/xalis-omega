@@ -1,4 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { Button } from '@design-system/components/button'
+import { Kicker } from '@design-system/components/kicker'
 import { EditorExportBar } from './-components/editor-export-bar'
 import { EditorPalette } from './-components/editor-palette'
 import { EditorPixelCanvas } from './-components/editor-pixel-canvas'
@@ -20,44 +22,48 @@ function EditorPage() {
   const tileSize = useEditor((state) => state.tileSize)
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold">
-          CTM Canvas
-          <span className="ml-2 text-sm font-normal text-zinc-500">
-            Continuity overlay editor
-          </span>
-        </h1>
-        {tileSize !== null && (
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm('Discard the current document?')) {
-                resetDocument()
-              }
-            }}
-            className="rounded border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-sm hover:border-zinc-600"
-          >
-            New document
-          </button>
-        )}
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-white card-shadow">
+        <div className="mx-auto flex h-14 w-full max-w-[1440px] items-center justify-between px-4">
+          <div className="flex items-baseline gap-3">
+            <span className="text-lg font-black tracking-wider text-gray-dark uppercase">
+              CTM Canvas
+            </span>
+            <Kicker>Continuity overlay editor</Kicker>
+          </div>
+          {tileSize !== null && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (window.confirm('Discard the current document?')) {
+                  resetDocument()
+                }
+              }}
+            >
+              New document
+            </Button>
+          )}
+        </div>
       </header>
 
-      {tileSize === null ? (
-        <EditorUploader />
-      ) : (
-        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <section className="flex min-w-0 flex-col gap-3">
-            <EditorToolbar />
-            <EditorPalette />
-            <EditorPixelCanvas />
-            <EditorExportBar />
-          </section>
-          <aside className="min-w-0">
-            <EditorPreviewPanel />
-          </aside>
-        </div>
-      )}
-    </main>
+      <main className="mx-auto w-full max-w-[1440px] p-4">
+        {tileSize === null ? (
+          <EditorUploader />
+        ) : (
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <section className="flex min-w-0 flex-col gap-4">
+              <EditorToolbar />
+              <EditorPalette />
+              <EditorPixelCanvas />
+              <EditorExportBar />
+            </section>
+            <aside className="min-w-0">
+              <EditorPreviewPanel />
+            </aside>
+          </div>
+        )}
+      </main>
+    </div>
   )
 }

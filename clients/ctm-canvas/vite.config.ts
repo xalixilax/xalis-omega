@@ -11,6 +11,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
+      '@design-system': path.resolve(
+        import.meta.dirname,
+        '../../packages/design-system/src',
+      ),
     },
   },
   plugins: [

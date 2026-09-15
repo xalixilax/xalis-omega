@@ -24,11 +24,11 @@ function RootComponent() {
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <HeadContent />
       </head>
-      <body className="bg-zinc-950 text-zinc-100">
+      <body className="font-sans">
         {children}
         <Scripts />
       </body>
