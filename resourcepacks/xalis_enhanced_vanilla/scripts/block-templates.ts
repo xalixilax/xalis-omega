@@ -1,4 +1,5 @@
-import type { BlockContext, GenFile, Template } from "../utils/blockGen";
+import type { Files } from "@lib/files/utils";
+import type { FileContext, Template } from "@lib/files/file-context";
 
 const parent = (parent: string, textures: Record<string, string>) => ({
 	parent,
@@ -16,10 +17,10 @@ const entry = (
 	...(weight !== undefined ? { weight } : {}),
 });
 
-function fModel(ctx: BlockContext, model: string, json: object): GenFile {
+function fModel(ctx: FileContext, model: string, json: object): Files {
 	return {
 		path: `assets/${ctx.ns}/models/${model}.json`,
-		json,
+		content: json,
 	};
 }
 
@@ -53,7 +54,7 @@ export const Door: Template<DoorCfg> = (ctx, cfg = {}) => {
 				top: `block/${block}_top_rh`,
 				side,
 			};
-	const files: GenFile[] = [
+	const files: Files[] = [
 		fModel(ctx, `block/door/${block}`, {
 			parent: "item/generated",
 			textures: { layer0: `item/${block}` },
@@ -84,7 +85,7 @@ export const Door: Template<DoorCfg> = (ctx, cfg = {}) => {
 		}),
 		{
 			path: `assets/${ctx.ns}/blockstates/${block}.json`,
-			json: { variants: doorVariants(block) },
+			content: { variants: doorVariants(block) },
 		},
 	];
 	return files;
@@ -183,7 +184,7 @@ export const Trapdoor: Template = (ctx) => {
 		fModel(ctx, `block/trapdoor/${block}_top`, parent("block/trapdoor/template_orientable_trapdoor_top", textures)),
 		{
 			path: `assets/${ctx.ns}/blockstates/${block}.json`,
-			json: { variants },
+			content: { variants },
 		},
 	];
 };
@@ -230,7 +231,7 @@ export const WallBrick: Template<BrickWallCfg> = (ctx, cfg) => {
 		fModel(ctx, `block/${block}_side_opposite`, parent("minecraft:block/template_wall_side_bricks_opposite", { wall: walls("wall"), opposite: walls("opposite"), end: walls("end") })),
 		{
 			path: `assets/${ctx.ns}/blockstates/${block}.json`,
-			json: { multipart },
+			content: { multipart },
 		},
 	];
 };
@@ -273,7 +274,7 @@ export const WallSandstone: Template = (ctx) => {
 		fModel(ctx, `block/wall/${block}_side_tall`, parent("block/wall/template_wall_side_tall", { wall })),
 		{
 			path: `assets/${ctx.ns}/blockstates/${block}.json`,
-			json: { multipart },
+			content: { multipart },
 		},
 	];
 };
@@ -316,7 +317,7 @@ export interface VariantCfg {
  * Covers cube_all/cube_column/cross/tinted_cross via cfg.modelJson.
  */
 export const VariantSet: Template<VariantCfg> = (ctx, cfg) => {
-	const files: GenFile[] = [];
+	const files: Files[] = [];
 	const rots = cfg.rots ?? [0];
 	const prefix = cfg.nsPrefix ? `${ctx.ns}:` : "";
 	const variants: Record<string, object[]> = { "": [] };
@@ -337,7 +338,7 @@ export const VariantSet: Template<VariantCfg> = (ctx, cfg) => {
 		if (cfg.base.baseJson) {
 			files.push({
 				path: `assets/${ctx.ns}/models/${cfg.base.model}.json`,
-				json: cfg.base.baseJson,
+				content: cfg.base.baseJson,
 			});
 		}
 		const baseWeights =
@@ -363,14 +364,14 @@ export const VariantSet: Template<VariantCfg> = (ctx, cfg) => {
 		if (cfg.generateModels !== false && cfg.modelJson) {
 			files.push({
 				path: `assets/${ctx.ns}/models/block/${cfg.folder}/${name}.json`,
-				json: cfg.modelJson(name),
+				content: cfg.modelJson(name),
 			});
 		}
 	});
 
 	files.push({
 		path: `assets/${ctx.ns}/blockstates/${cfg.block}.json`,
-		json: { variants },
+		content: { variants },
 	});
 	return files;
 };

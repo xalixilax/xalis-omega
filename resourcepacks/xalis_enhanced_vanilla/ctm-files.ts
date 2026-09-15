@@ -1,5 +1,5 @@
 import path from "node:path";
-import { extractTextures } from "./scripts/templateToTiles";
+import { extractTextures } from "@lib/modded/overlay-template-to-tiles";
 import {
 	type CtmPropertiesBase,
 	CtmPropertiesCtmCompact,
@@ -10,31 +10,13 @@ import {
 	CtmPropertiesOverlayRandom,
 	CtmPropertiesRandom,
 	CtmPropertiesVertical,
-} from "./types/ctm/ctm";
+} from "@lib/modded/ctm";
 import fs from "node:fs";
-import { config } from "./resourcpack.config";
-import {
-	flattenMinecraftBlocksArgs,
-	minecraftBlocks,
-	type MinecraftBlocks,
-} from "./utils/ctmBlocks";
-
-type Block = string;
-type Namespace = string;
-
-type CtmPacks = {
-	[key in MinecraftBlocks]: {
-		overlays: Set<string> | null;
-		minecraft: {
-			[key: Block]: CtmPropertiesBase[];
-		};
-		modded?: {
-			[key: Namespace]: {
-				[key: Block]: CtmPropertiesBase[];
-			};
-		};
-	};
-};
+import { config } from "./resourcepack.config";
+import type { Block, BlockCategories, Namespace } from "@lib/types/minecraft";
+import { flattenMinecraftBlocksArgs } from "./utils/ctm-blocks";
+import { minecraftBlockCategories } from "@lib/minecraft/blocks-categories";
+import type { CtmPacks } from "@lib/types/modded";
 
 /**
  * Get the number of blocks in the ctm files. Every folder has a number that is used to sort rendering order and avoid conflicting overlays.
@@ -78,17 +60,17 @@ const snowyBiomes =
 	"snowy_beach snowy_plains snowy_slopes ice_spikes snowy_taiga frozen_river grove jagged_peaks frozen_peaks terralith:alpha_islands_winter terralith:emerald_peaks terralith:frozen_cliffs terralith:glacial_chasm terralith:gravel_desert terralith:ice_marsh terralith:scarlet_mountains terralith:skylands_winter terralith:snowy_badlands terralith:snowy_maple_forest terralith:snowy_shield terralith:wintry_forest terralith:wintry_lowlands";
 
 const grassMatchBlocks = flattenMinecraftBlocksArgs(
-	minecraftBlocks.grasses,
-	minecraftBlocks.soil,
-	minecraftBlocks.stones,
+	minecraftBlockCategories.grasses,
+	minecraftBlockCategories.soil,
+	minecraftBlockCategories.stones,
 );
-const soilConnectBlocks = flattenMinecraftBlocksArgs(minecraftBlocks.soil);
-const stoneConnectBlocks = flattenMinecraftBlocksArgs(minecraftBlocks.stones);
+const soilConnectBlocks = flattenMinecraftBlocksArgs(minecraftBlockCategories.soil);
+const stoneConnectBlocks = flattenMinecraftBlocksArgs(minecraftBlockCategories.stones);
 const masonryConnectBlocks = flattenMinecraftBlocksArgs(
-	minecraftBlocks.masonry_blocks,
+	minecraftBlockCategories.masonry_blocks,
 );
 const miscConnectBlocks = flattenMinecraftBlocksArgs(
-	minecraftBlocks.misc_blocks,
+	minecraftBlockCategories.misc_blocks,
 );
 
 export const files: Partial<CtmPacks> = {

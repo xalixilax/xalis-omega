@@ -1,30 +1,12 @@
-import fs from "node:fs";
-import path from "node:path";
-import { config } from "../resourcpack.config";
-import { writeGenFiles, type GenFile } from "../utils/blockGen";
+import { type Files } from "@lib/files/utils";
 import {
-	Door,
-	Trapdoor,
-	WallBrick,
-	WallSandstone,
-	VariantSet,
 	type BrickWallCfg,
 	type VariantCfg,
-} from "./blockTemplates";
-
-/** v2 pack used as art/reference source for everything not (yet) templated. */
-const V2_ASSETS = path.join(
-	import.meta.dir,
-	"..",
-	".tmp",
-	"xali's enhanced vanilla 2.0.0",
-	"assets",
-);
+} from "./block-templates";
 
 const Mc = (name: string) => ({ name, ns: "minecraft" });
-export { Mc };
 
-export const WOODS = [
+const WOODS = [
 	"oak",
 	"spruce",
 	"birch",
@@ -36,7 +18,7 @@ export const WOODS = [
 	"iron",
 ];
 
-export const BRICK_WALLS: [string, BrickWallCfg][] = [
+const BRICK_WALLS: [string, BrickWallCfg][] = [
 	["stone_brick", { post: "stone_bricks_post", wall: "stone_bricks_wall", opposite: "stone_bricks_wall_opposite", end: "stone_bricks_wall_end" }],
 	["mossy_stone_brick", { post: "mossy_stone_bricks_post", wall: "mossy_stone_bricks_wall", opposite: "mossy_stone_bricks_wall_opposite", end: "mossy_stone_bricks_wall_end" }],
 	["end_stone_brick", { post: "end_stone_bricks_post", wall: "end_stone_bricks_wall", opposite: "end_stone_bricks_wall_opposite", end: "end_stone_bricks_wall_end" }],
@@ -44,14 +26,14 @@ export const BRICK_WALLS: [string, BrickWallCfg][] = [
 	["polished_blackstone_brick", { post: "polished_blackstone_bricks_post", wall: "polished_blackstone_bricks_wall", opposite: "polished_blackstone_bricks_wall_opposite", end: "polished_blackstone_bricks_wall_end" }],
 ];
 
-export const SANDSTONE_WALLS = ["sandstone", "red_sandstone"];
+const SANDSTONE_WALLS = ["sandstone", "red_sandstone"];
 
 const cubeAll = (folder: string) => (name: string) => ({
 	parent: "block/cube_all",
 	textures: { all: `block/${folder}/${name}` },
 });
 
-export const VARIANT_SETS: VariantCfg[] = [
+const VARIANT_SETS: VariantCfg[] = [
 	{
 		block: "bricks",
 		folder: "bricks",
@@ -238,7 +220,7 @@ export const VARIANT_SETS: VariantCfg[] = [
 ];
 
 /** tall_grass: two variants; upper has 3 texture variants. */
-export function tallGrass(ctx: ReturnType<typeof Mc>): GenFile[] {
+function tallGrass(ctx: ReturnType<typeof Mc>): Files[] {
 	const name = (suffix = "") =>
 		`block/tall_grass_top/tall_grass_top${suffix}`;
 	const modelJson = (texture: string) => ({
@@ -248,19 +230,19 @@ export function tallGrass(ctx: ReturnType<typeof Mc>): GenFile[] {
 	return [
 		{
 			path: `assets/${ctx.ns}/models/${name()}.json`,
-			json: modelJson("block/tall_grass_top"),
+			content: modelJson("block/tall_grass_top"),
 		},
 		{
 			path: `assets/${ctx.ns}/models/${name("_1")}.json`,
-			json: modelJson("block/tall_grass_top_1"),
+			content: modelJson("block/tall_grass_top_1"),
 		},
 		{
 			path: `assets/${ctx.ns}/models/${name("_2")}.json`,
-			json: modelJson("block/tall_grass_top_2"),
+			content: modelJson("block/tall_grass_top_2"),
 		},
 		{
 			path: `assets/${ctx.ns}/blockstates/tall_grass.json`,
-			json: {
+			content: {
 				variants: {
 					"half=lower": { model: "block/tall_grass_bottom" },
 					"half=upper": [
@@ -272,54 +254,4 @@ export function tallGrass(ctx: ReturnType<typeof Mc>): GenFile[] {
 			},
 		},
 	];
-}
-
-/** Copy the v2 pack assets (textures, non-templated models/blockstates) and let generation override them. */
-function copyV2Assets(root: string): void {
-	if (!fs.existsSync(V2_ASSETS)) {
-		throw new Error(`V2 pack not found in ${V2_ASSETS}`);
-	}
-	fs.cpSync(V2_ASSETS, path.join(root, "assets"), {
-		recursive: true,
-		filter: (src) => !src.includes("optifine"),
-	});
-}
-
-/** One-off blocks whose blockstate is pure data (vine, lectern, cactus, seagrass): just re-emit the v2 file. */
-export const STATIC_BLOCKSTATES = ["vine", "lectern", "cactus", "seagrass"];
-
-export function generateBlockstates(): void {
-	const root = config.build.output;
-
-	copyV2Assets(root);
-
-	const files: GenFile[] = [];
-	for (const wood of WOODS) {
-		files.push(...Door(Mc(wood), { hinge: wood === "warped" ? "same" : "rh" }));
-		files.push(...Trapdoor(Mc(wood)));
-	}
-	for (const [wall, cfg] of BRICK_WALLS) {
-		files.push(...WallBrick(Mc(wall), cfg));
-	}
-	for (const wall of SANDSTONE_WALLS) {
-		files.push(...WallSandstone(Mc(wall)));
-	}
-	for (const cfg of VARIANT_SETS) {
-		files.push(...VariantSet(Mc(cfg.block), cfg));
-	}
-	files.push(...tallGrass(Mc("tall_grass")));
-	for (const block of STATIC_BLOCKSTATES) {
-		files.push({
-			path: `assets/minecraft/blockstates/${block}.json`,
-			json: JSON.parse(
-				fs.readFileSync(
-					path.join(V2_ASSETS, "minecraft", "blockstates", `${block}.json`),
-					"utf-8",
-				),
-			),
-		});
-	}
-
-	writeGenFiles(root, files);
-	console.log("Blockstates/models generated:", files.length, "files");
 }

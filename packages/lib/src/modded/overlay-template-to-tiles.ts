@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { splitOverlayTemplate } from "../utils/canvas";
+import { type SplitOptions, split } from "../canvas/split-image-template";
 
 const OUTPUT_DIR = "./dist/assets/minecraft/optifine/ctm";
 
@@ -21,8 +21,23 @@ function getStartIndex(
 	fileName: string,
 ) {
 	const match = fileName.match(/(\d+)\.png/);
-  return match ? Number.parseInt(match[0]) : undefined;
+	return match ? Number.parseInt(match[0]) : undefined;
 }
+
+/**
+ * Split OverlayTemplate Image into 17 tiles
+ * @param input
+ * @param output
+ * @param options
+ */
+async function splitOverlayTemplate(
+	input: string,
+	output: string,
+	options?: Omit<SplitOptions, "tileCount">,
+) {
+	await split(input, output, 7, 3, { ...options, tileCount: 17 });
+}
+
 
 /**
  *

@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@lib/*": ["../../packages/lib/src/*"],
+      "@cfg": ["../../configs.ts"]
+    },
     // Enable latest features
     "lib": ["ESNext", "DOM"],
     "target": "ESNext",

@@ -12,6 +12,7 @@ type Config = {
 	build: {
 		output: string;
 	};
+	optimize: boolean;
 };
 
 export const config: Config = {
@@ -31,4 +32,5 @@ export const config: Config = {
 			//"/Users/xalix/Library/Application Support/PrismLauncher/instances/Fabulously Optimized/minecraft/resourcepacks/release",
 		//"./dist",
 	},
+	optimize: true,
 };
