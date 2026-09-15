@@ -1,10 +1,16 @@
 import { useEffect, useRef } from "react"
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
   SHEET_COLS,
   TILE_COUNT,
   allTilePatterns,
-} from "#/routes/-lib/overlay"
-import { useEditorState } from "#/routes/-hooks/use-editor-store"
+} from "@/routes/-lib/overlay"
+import { useEditorState } from "@/routes/-hooks/use-editor-store"
 
 const MINI_BLOCK_PX = 16 // base block size in each mini 3x3
 const MINI_PX = MINI_BLOCK_PX * 3
@@ -88,24 +94,28 @@ export function EditorPreviewPanel() {
   const displayW = displayH * aspectW
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--surface-strong)]">
-      <div className="island-kicker">Preview (17 mini 3x3 fields)</div>
-      <div className="w-full overflow-auto">
-        <canvas
-          ref={canvasRef}
-          style={{
-            width: displayW,
-            height: displayH,
-            imageRendering: "pixelated",
-          }}
-        />
-      </div>
-      {!state.ready && (
-        <p className="text-xs text-[var(--sea-ink-soft)]">
-          Upload a texture to render the 17 connection states.
-        </p>
-      )}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Preview (17 mini 3x3 fields)</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <div className="w-full overflow-auto">
+          <canvas
+            ref={canvasRef}
+            style={{
+              width: displayW,
+              height: displayH,
+              imageRendering: "pixelated",
+            }}
+          />
+        </div>
+        {!state.ready && (
+          <p className="text-sm text-muted-foreground">
+            Upload a texture to render the 17 connection states.
+          </p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

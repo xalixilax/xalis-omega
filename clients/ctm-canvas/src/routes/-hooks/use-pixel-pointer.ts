@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react"
-import { SHEET_COLS, TILE_COUNT } from "#/routes/-lib/overlay"
+import { SHEET_COLS, TILE_COUNT } from "@/routes/-lib/overlay"
 
 export type PixelPointer = {
   cell: number

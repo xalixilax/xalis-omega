@@ -5,10 +5,10 @@ import {
   overlayTiles,
   allTilePatterns,
   type TileDescriptor,
-} from "#/routes/-lib/overlay"
-import { useEditorState } from "#/routes/-hooks/use-editor-store"
-import { usePixelPointer } from "#/routes/-hooks/use-pixel-pointer"
-import { paintAtPixel } from "#/routes/-lib/store"
+} from "@/routes/-lib/overlay"
+import { useEditorState } from "@/routes/-hooks/use-editor-store"
+import { usePixelPointer } from "@/routes/-hooks/use-pixel-pointer"
+import { paintAtPixel } from "@/routes/-lib/store"
 
 export function EditorPixelCanvas() {
   const state = useEditorState()
@@ -182,7 +182,7 @@ export function EditorPixelCanvas() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full rounded-xl border border-[var(--line)] overflow-hidden bg-[var(--foam)]"
+      className="relative w-full overflow-hidden rounded-lg border bg-muted"
     >
       <div className="aspect-[7/3] w-full">
         <canvas
@@ -210,7 +210,7 @@ export function EditorPixelCanvas() {
         />
       </div>
       {!state.ready && (
-        <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--sea-ink-soft)]">
+        <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
           Upload a 16/32/64px square texture to begin.
         </div>
       )}

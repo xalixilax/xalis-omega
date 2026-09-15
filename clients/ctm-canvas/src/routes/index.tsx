@@ -1,47 +1,68 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
-import { EditorUploader } from "#/routes/-components/editor-uploader"
-import { EditorToolbar } from "#/routes/-components/editor-toolbar"
-import { EditorPalette } from "#/routes/-components/editor-palette"
-import { EditorPixelCanvas } from "#/routes/-components/editor-pixel-canvas"
-import { EditorPreviewPanel } from "#/routes/-components/editor-preview-panel"
-import { EditorExportBar } from "#/routes/-components/editor-export-bar"
-import { useAutosave, readAutosave, restoreFromAutosave } from "#/routes/-hooks/use-autosave"
-import { editorStore } from "#/routes/-lib/store"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { EditorUploader } from "@/routes/-components/editor-uploader"
+import { EditorToolbar } from "@/routes/-components/editor-toolbar"
+import { EditorPalette } from "@/routes/-components/editor-palette"
+import { EditorPixelCanvas } from "@/routes/-components/editor-pixel-canvas"
+import { EditorPreviewPanel } from "@/routes/-components/editor-preview-panel"
+import { EditorExportBar } from "@/routes/-components/editor-export-bar"
+import {
+  useAutosave,
+  readAutosave,
+  restoreFromAutosave,
+  clearAutosave,
+  type Serializable,
+} from "@/routes/-hooks/use-autosave"
+import { editorStore } from "@/routes/-lib/store"
 
 export const Route = createFileRoute("/")({ component: Home })
 
 function Home() {
   useAutosave()
   const [prompted, setPrompted] = useState(false)
+  const [saved, setSaved] = useState<Serializable | null>(null)
+  const [clearOpen, setClearOpen] = useState(false)
 
   useEffect(() => {
     if (prompted) return
-    const saved = readAutosave()
-    if (!saved) {
-      setPrompted(true)
-      return
-    }
-    const ok = window.confirm(
-      "A saved session was found in this browser. Restore it?",
-    )
     setPrompted(true)
-    if (!ok) return
+    setSaved(readAutosave())
+  }, [prompted])
+
+  const onRestore = () => {
+    if (!saved) return
     restoreFromAutosave(saved).catch((err) => {
       console.warn("restore failed", err)
     })
-  }, [prompted])
+    setSaved(null)
+  }
+
+  const onClearSession = () => {
+    clearAutosave()
+    editorStore.setState((prev) => ({ ...prev, ready: false }))
+    window.location.reload()
+  }
 
   return (
     <div className="page-wrap py-8">
       <header className="mb-6 flex items-end justify-between gap-4">
         <div>
           <p className="island-kicker mb-1">Continuity overlay editor</p>
-          <h1 className="display-title text-4xl text-[var(--sea-ink)]">
-            CTM Canvas
-          </h1>
+          <h1 className="display-title text-4xl">CTM Canvas</h1>
         </div>
-        <p className="hidden md:block text-sm text-[var(--sea-ink-soft)] max-w-xl">
+        <p className="hidden md:block text-sm text-muted-foreground max-w-xl">
           Upload a 16/32/64px block texture, paint the 17 overlay tiles for the
           Continuity overlay method, preview every connection state, and
           export a ready-to-use PNG + <code>.properties</code>.
@@ -58,7 +79,7 @@ function Home() {
 
         <section className="flex flex-col gap-4">
           <EditorPixelCanvas />
-          <p className="text-xs text-[var(--sea-ink-soft)]">
+          <p className="text-sm text-muted-foreground">
             Tile indices 0..16 follow the Continuity overlay layout. Padding
             cells (17..20) are not exported. Paint, Erase, Pick, and Pan live in
             the toolbar; right-click erases. Use the Color/Alpha toggle to edit
@@ -71,7 +92,7 @@ function Home() {
         </section>
       </div>
 
-      <footer className="mt-10 pt-6 border-t border-[var(--line)] text-xs text-[var(--sea-ink-soft)] flex items-center justify-between">
+      <footer className="mt-10 flex items-center justify-between gap-4 border-t pt-6 text-sm text-muted-foreground">
         <span>
           Built for the Continuity connected-textures spec ·{" "}
           <a
@@ -82,19 +103,51 @@ function Home() {
             spec
           </a>
         </span>
-        <button
-          type="button"
-          onClick={() => {
-            if (!window.confirm("Clear saved session?")) return
-            localStorage.removeItem("ctm-canvas:v1")
-            editorStore.setState((prev) => ({ ...prev, ready: false }))
-            window.location.reload()
-          }}
-          className="underline"
-        >
-          Clear session
-        </button>
+        <AlertDialog open={clearOpen} onOpenChange={setClearOpen}>
+          <AlertDialogTrigger
+            render={
+              <Button variant="link" size="sm" className="h-auto p-0" />
+            }
+          >
+            Clear session
+          </AlertDialogTrigger>
+          <AlertDialogContent size="sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear saved session?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the autosaved texture from this browser and resets
+                the editor.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction variant="destructive" onClick={onClearSession}>
+                Clear
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </footer>
+
+      <AlertDialog
+        open={!!saved}
+        onOpenChange={(open) => {
+          if (!open) setSaved(null)
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore saved session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A saved session was found in this browser. Restore it?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Skip</AlertDialogCancel>
+            <AlertDialogAction onClick={onRestore}>Restore</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

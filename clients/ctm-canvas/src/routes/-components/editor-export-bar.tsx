@@ -1,12 +1,22 @@
 import { useState } from "react"
-import { editorStore } from "#/routes/-lib/store"
-import { useEditorState } from "#/routes/-hooks/use-editor-store"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { editorStore } from "@/routes/-lib/store"
+import { useEditorState } from "@/routes/-hooks/use-editor-store"
 import {
   composeSheetImage,
   downloadBlob,
   propertiesFileContent,
   sheetImageToPngBlob,
-} from "#/routes/-lib/image"
+} from "@/routes/-lib/image"
 
 export function EditorExportBar() {
   const state = useEditorState()
@@ -51,71 +61,73 @@ export function EditorExportBar() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--surface-strong)]">
-      <div className="island-kicker">Export</div>
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <label className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-[var(--sea-ink-soft)]">
-            block name
-          </span>
-          <input
-            value={state.blockName}
-            onChange={setField("blockName")}
-            className="rounded-md border border-[var(--line)] px-2 py-1 bg-white"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-[var(--sea-ink-soft)]">
-            layer
-          </span>
-          <input
-            value={state.layer}
-            onChange={setField("layer")}
-            className="rounded-md border border-[var(--line)] px-2 py-1 bg-white"
-          />
-        </label>
-        <label className="col-span-2 flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-[var(--sea-ink-soft)]">
-            matchBlocks
-          </span>
-          <input
-            value={state.matchBlocks}
-            onChange={setField("matchBlocks")}
-            placeholder="amethyst_blocks grass_block"
-            className="rounded-md border border-[var(--line)] px-2 py-1 bg-white"
-          />
-        </label>
-        <label className="col-span-2 flex flex-col gap-1">
-          <span className="text-xs uppercase tracking-wider text-[var(--sea-ink-soft)]">
-            connectBlocks
-          </span>
-          <input
-            value={state.connectBlocks}
-            onChange={setField("connectBlocks")}
-            placeholder="amethyst_block budding_amethyst"
-            className="rounded-md border border-[var(--line)] px-2 py-1 bg-white"
-          />
-        </label>
-      </div>
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={onExportPng}
-          disabled={!state.ready || busy}
-          className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-[var(--lagoon)] text-white border border-[var(--lagoon-deep)] disabled:opacity-50"
-        >
-          {busy ? "Exporting…" : "Download PNG"}
-        </button>
-        <button
-          type="button"
-          onClick={onExportProperties}
-          disabled={!state.ready}
-          className="flex-1 rounded-lg px-3 py-2 text-sm font-semibold bg-white text-[var(--sea-ink)] border border-[var(--line)] disabled:opacity-50"
-        >
-          Download .properties
-        </button>
-      </div>
-      {error && <div className="text-xs text-[var(--destructive)]">{error}</div>}
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Export</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="block-name">Block name</Label>
+            <Input
+              id="block-name"
+              value={state.blockName}
+              onChange={setField("blockName")}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="layer">Layer</Label>
+            <Input
+              id="layer"
+              value={state.layer}
+              onChange={setField("layer")}
+            />
+          </div>
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <Label htmlFor="match-blocks">Match blocks</Label>
+            <Input
+              id="match-blocks"
+              value={state.matchBlocks}
+              onChange={setField("matchBlocks")}
+              placeholder="amethyst_blocks grass_block"
+            />
+          </div>
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <Label htmlFor="connect-blocks">Connect blocks</Label>
+            <Input
+              id="connect-blocks"
+              value={state.connectBlocks}
+              onChange={setField("connectBlocks")}
+              placeholder="amethyst_block budding_amethyst"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            onClick={onExportPng}
+            disabled={!state.ready || busy}
+            className="flex-1"
+          >
+            {busy ? "Exporting…" : "Download PNG"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onExportProperties}
+            disabled={!state.ready}
+            className="flex-1"
+          >
+            Download .properties
+          </Button>
+        </div>
+        {error && (
+          <Alert variant="destructive">
+            <AlertTitle>Export failed</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   )
 }

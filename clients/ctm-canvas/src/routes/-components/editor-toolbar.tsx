@@ -1,5 +1,12 @@
-import { editorStore, type EditingMode, type Tool } from "#/routes/-lib/store"
-import { useEditorState } from "#/routes/-hooks/use-editor-store"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { editorStore, type EditingMode, type Tool } from "@/routes/-lib/store"
+import { useEditorState } from "@/routes/-hooks/use-editor-store"
 
 const TOOLS: { id: Tool; label: string; hint: string }[] = [
   { id: "paint", label: "Paint", hint: "Color mode: write color + reveal. Alpha mode: reveal mask" },
@@ -16,51 +23,47 @@ const MODES: { id: EditingMode; label: string; hint: string }[] = [
 export function EditorToolbar() {
   const state = useEditorState()
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl border border-[var(--line)] bg-[var(--surface-strong)]">
-      <div className="island-kicker">Tools</div>
-      <div className="grid grid-cols-2 gap-1 p-1 rounded-lg bg-[var(--surface)] border border-[var(--line)]">
-        {MODES.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            title={m.hint}
-            onClick={() =>
-              editorStore.setState((prev) => ({ ...prev, editing: m.id }))
-            }
-            className={[
-              "px-3 py-1.5 rounded-md text-sm font-semibold transition",
-              state.editing === m.id
-                ? "bg-[var(--lagoon)] text-white"
-                : "text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)]",
-            ].join(" ")}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {TOOLS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            title={t.hint}
-            onClick={() => editorStore.setState((prev) => ({ ...prev, tool: t.id }))}
-            className={[
-              "px-3 py-2 rounded-lg text-sm font-medium border transition",
-              state.tool === t.id
-                ? "bg-[var(--lagoon)] text-white border-[var(--lagoon-deep)]"
-                : "bg-white text-[var(--sea-ink)] border-[var(--line)] hover:bg-[var(--surface)]",
-            ].join(" ")}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <p className="text-xs text-[var(--sea-ink-soft)]">
-        Editing: <strong className="text-[var(--sea-ink)]">{state.editing}</strong>
-        {" · "}Tool:{" "}
-        <strong className="text-[var(--sea-ink)]">{state.tool}</strong>
-      </p>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Tools</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <ToggleGroup
+          variant="outline"
+          value={[state.editing]}
+          onValueChange={(v) => {
+            if (v.length === 0) return
+            editorStore.setState((prev) => ({ ...prev, editing: v[0] as EditingMode }))
+          }}
+          className="w-full"
+        >
+          {MODES.map((m) => (
+            <ToggleGroupItem key={m.id} value={m.id} title={m.hint} className="flex-1">
+              {m.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <ToggleGroup
+          variant="outline"
+          value={[state.tool]}
+          onValueChange={(v) => {
+            if (v.length === 0) return
+            editorStore.setState((prev) => ({ ...prev, tool: v[0] as Tool }))
+          }}
+          className="w-full flex-wrap"
+        >
+          {TOOLS.map((t) => (
+            <ToggleGroupItem key={t.id} value={t.id} title={t.hint} className="flex-1">
+              {t.label}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+        <p className="text-sm text-muted-foreground">
+          Editing: <span className="font-medium text-foreground">{state.editing}</span>
+          {" · "}Tool:{" "}
+          <span className="font-medium text-foreground">{state.tool}</span>
+        </p>
+      </CardContent>
+    </Card>
   )
 }

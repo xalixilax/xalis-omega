@@ -1,18 +1,18 @@
 import { useEffect, useRef } from "react"
-import { editorStore } from "#/routes/-lib/store"
+import { editorStore } from "@/routes/-lib/store"
 import {
   imageDataToDataUrl,
   fillBaseSheetFromImage,
   loadImage,
   decodeImage,
-} from "#/routes/-lib/image"
-import { templates, defaultTemplateId } from "#/routes/-lib/templates"
-import { SHEET_COLS, SHEET_ROWS } from "#/routes/-lib/overlay"
+} from "@/routes/-lib/image"
+import { templates, defaultTemplateId } from "@/routes/-lib/templates"
+import { SHEET_COLS, SHEET_ROWS } from "@/routes/-lib/overlay"
 
 const STORAGE_KEY = "ctm-canvas:v1"
 const DEBOUNCE_MS = 600
 
-type Serializable = {
+export type Serializable = {
   tileSize: number
   templateId: string
   basePngDataUrl: string | null
