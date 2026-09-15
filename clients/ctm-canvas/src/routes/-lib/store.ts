@@ -1,149 +1,81 @@
-import { Store } from "@tanstack/store"
-import { SHEET_CELL_COUNT, TILE_COUNT } from "./overlay"
+import { Store } from '@tanstack/react-store'
 
-export type Tool = "paint" | "erase" | "picker" | "pan"
-export type EditingMode = "color" | "alpha"
+export type Tool = 'paint' | 'erase' | 'picker' | 'pan'
+export type LayerOption = 'cutout_mipped' | 'cutout' | 'translucent'
+/** Sheet the drawing tools act on. */
+export type ActiveLayer = 'alpha' | 'color'
+/** What the left editor canvas displays. */
+export type ViewMode = 'result' | 'color' | 'alpha'
 
 export type EditorState = {
-  ready: boolean
-  tileSize: number // 16 | 32 | 64
-  templateId: string
-
-  // base sheet: original uploaded image data (N x N RGBA), read-only
+  /**
+   * Bumped after every in-place mutation of the big sheet arrays so consumers
+   * (canvases) can repaint without copying arrays on each edit.
+   */
+  revision: number
+  /** Side length N of one square tile. Null when no document is loaded. */
+  tileSize: number | null
+  baseName: string
+  /**
+   * Layer 1: RGBA per pixel per cell, 17*N*N*4. Read-only; never modified.
+   * A single-tile sprite is replicated into every cell; an imported 7x3
+   * sheet keeps its own pixels per cell.
+   */
   base: Uint8ClampedArray | null
-  baseImage: HTMLImageElement | null
-
-  // alpha sheet: 21 cells x N x N binary 1/0
+  /**
+   * Layer 2: binary mask per pixel per cell, 17*N*N. 1 shows the base pixel,
+   * 0 hides it. Gates layer 1 only, never layer 3.
+   */
   alpha: Uint8Array | null
-
-  // color sheet: 21 cells x N x N x 4 RGBA
+  /**
+   * Layer 3: RGBA per pixel per cell, 17*N*N*4. Independent of the alpha
+   * mask; alpha byte 255 = hand-painted pixel, 0 = no paint.
+   */
   color: Uint8Array | null
-
-  palette: string[] // hex colors
-  activeColor: string | null
-
+  palette: string[]
+  activeColor: string
+  activeCell: number
   tool: Tool
-  editing: EditingMode
-
-  // export form
+  /** Side length of the square brush, in pixels (1 = single pixel). */
+  brushSize: number
+  activeLayer: ActiveLayer
+  viewMode: ViewMode
+  /** Show the composite in Result view; off = pure underlay for comparison. */
+  overlayVisible: boolean
+  /** Show the per-tile connection guides (dashed side/corner markers). */
+  guidesVisible: boolean
+  /** Percent of opacity for layer 0 (background) in Result view (0-100). */
+  backgroundOpacity: number
+  /** Layer 0: optional underlay texture (N*N*4) behind the composite. */
+  background: Uint8ClampedArray | null
   matchBlocks: string
   connectBlocks: string
-  blockName: string
-  layer: string
-
-  sheetWidth: number
-  sheetHeight: number
+  startIndex: number
+  layer: LayerOption
 }
 
 export const initialEditorState: EditorState = {
-  ready: false,
-  tileSize: 16,
-  templateId: "soft-stone",
+  revision: 0,
+  tileSize: null,
+  baseName: 'overlay',
   base: null,
-  baseImage: null,
   alpha: null,
   color: null,
   palette: [],
-  activeColor: null,
-  tool: "paint",
-  editing: "color",
-  matchBlocks: "",
-  connectBlocks: "",
-  blockName: "block",
-  layer: "cutout_mipped",
-  sheetWidth: SHEET_CELL_COUNT /** placeholder */,
-  sheetHeight: 3,
+  activeColor: '#ffffff',
+  activeCell: 0,
+  tool: 'paint',
+  brushSize: 1,
+  activeLayer: 'alpha',
+  viewMode: 'result',
+  overlayVisible: true,
+  guidesVisible: false,
+  backgroundOpacity: 100,
+  background: null,
+  matchBlocks: '',
+  connectBlocks: '',
+  startIndex: 0,
+  layer: 'cutout_mipped',
 }
 
 export const editorStore = new Store<EditorState>(initialEditorState)
-
-export function totalCellPixels(tileSize: number): number {
-  return SHEET_CELL_COUNT * tileSize * tileSize
-}
-
-export function cellStartIndex(cell: number, tileSize: number): number {
-  return cell * tileSize * tileSize
-}
-
-export type PaintAtResult = "ok" | "ignored"
-
-export function paintAtPixel(
-  cell: number,
-  px: number,
-  py: number,
-  tileSize: number,
-  isRight: boolean,
-): void {
-  const state = editorStore.state
-  if (!state.alpha || !state.color) return
-  if (cell < 0 || cell >= TILE_COUNT) return
-  const pixel = cellStartIndex(cell, tileSize) + py * tileSize + px
-  const colorIdx = pixel * 4
-
-  if (state.tool === "picker") {
-    const r = state.color[colorIdx]
-    const g = state.color[colorIdx + 1]
-    const b = state.color[colorIdx + 2]
-    const a = state.color[colorIdx + 3]
-    if (a === 0) return
-    const hex = `#${byteToHex(r)}${byteToHex(g)}${byteToHex(b)}${
-      a === 255 ? "" : byteToHex(a)
-    }`
-    editorStore.setState((prev) => ({
-      ...prev,
-      activeColor: hex,
-      palette: prev.palette.includes(hex)
-        ? prev.palette
-        : [...prev.palette, hex],
-    }))
-    return
-  }
-
-  if (state.tool === "pan") return
-
-  // Right-click always erases (alpha = 0), a quick rubber for any tool.
-  if (isRight || state.tool === "erase") {
-    state.alpha[pixel] = 0
-  } else if (state.tool === "paint") {
-    state.alpha[pixel] = 1
-    if (state.editing === "alpha") {
-      // Reveal the existing color; write the active color only when the
-      // pixel is still transparent so painting is visible on holes.
-      if (state.color[colorIdx + 3] === 0 && state.activeColor) {
-        const [r, g, b, a] = hexToBytes(state.activeColor, state)
-        state.color[colorIdx] = r
-        state.color[colorIdx + 1] = g
-        state.color[colorIdx + 2] = b
-        state.color[colorIdx + 3] = a
-      }
-    } else if (state.activeColor) {
-      const [r, g, b, a] = hexToBytes(state.activeColor, state)
-      state.color[colorIdx] = r
-      state.color[colorIdx + 1] = g
-      state.color[colorIdx + 2] = b
-      state.color[colorIdx + 3] = a
-    }
-  }
-
-  // Trigger re-render by replacing the alpha and color byte arrays,
-  // since components compare by reference.
-  editorStore.setState((prev) => ({
-    ...prev,
-    alpha: prev.alpha ? new Uint8Array(prev.alpha) : prev.alpha,
-    color: prev.color ? new Uint8Array(prev.color) : prev.color,
-  }))
-}
-
-function hexToBytes(hex: string, _state: EditorState): number[] {
-  const m = /^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$/.exec(hex)
-  if (!m) return [0, 0, 0, 255]
-  const r = parseInt(m[1].slice(0, 2), 16)
-  const g = parseInt(m[1].slice(2, 4), 16)
-  const b = parseInt(m[1].slice(4, 6), 16)
-  const a = m[2] ? parseInt(m[2], 16) : 255
-  return [r, g, b, a]
-}
-
-function byteToHex(b: number): string {
-  return b.toString(16).padStart(2, "0")
-}

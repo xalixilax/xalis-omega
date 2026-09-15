@@ -179,4 +179,64 @@ clients/ctm-canvas/src/
 - Per-tile color quantisation vs free palette restriction relaxation.
 - Resume from a previously exported PNG (re-parse into sheets).
 - Side-by-side base-only vs overlaid preview toggle.
+
+## Implementation notes (v1 shipped)
+
+Implemented in `clients/ctm-canvas` with TanStack Start 1.x, TanStack Store,
+Tailwind v4, and Vitest (`pnpm --filter ctm-canvas dev|build|test|typecheck`).
+Deviations from the sections above:
+
+- **Corner semantics** — corners in the descriptor table are literal
+  diagonal-neighbour flags, not derived from adjacent sides. Tiles 0/2/14/16
+  cover diagonal-only patterns; side strips carry their own corner pixels
+  (tile 11 lists top + left and no corner). `tileIndexForNeighbors`
+  mirrors this convention and returns null for isolated blocks and for the
+  straight-line pairs left+right / top+bottom.
+- **Sheet arrays** — `alpha` is `Uint8Array(17 * N * N)`; padding cells are
+  never materialised because the export composes used cells only.
+- **Template decoding** — a template counts as visible either through its
+  alpha channel (>127) or, when fully opaque, through luminance (>127). The
+  bundled `soft-stone.png` uses opaque black on transparent.
+- **Tests** — pure logic only (overlay lookup, properties builder, sheet
+  composition). PNG encode/decode runs in the browser via canvas APIs and is
+  not covered by Node tests.
+
+## Layer-aware editing (feedback round 1)
+
+- The toolbar gained **Draw on** (alpha / color layer) and **View**
+  (result / color / alpha) switches. The alpha view renders the binary mask
+  as black/white at runtime; the color view shows base + full color ignoring
+  the mask.
+- Strokes are per-layer: on the alpha layer, paint shows pixels and erase
+  hides them (colors untouched). On the color layer, paint writes the active
+  palette colour and erase restores the base sprite pixel (visibility
+  untouched). Right-click forces an erase on either layer.
+- The palette is disabled while the alpha layer is selected.
+- **Mask highlight** — in Result and Color views, pixels outside the alpha
+  mask are dimmed to 35% brightness so the overlay region stays readable even
+  when overlay colours match the base sprite. A "Dim unmasked" toolbar toggle
+  turns this off. Connection guides are faint dashed lines (1px) instead of
+  filled strips so adjacent cells no longer merge into solid bands.
+
+## Feedback round 3
+
+- **Overlay toggle** — an "Overlay" checkbox shows/hides the composite in
+  Result view for A/B comparison against the pure base texture.
+- **Dim slider** — the mask dimming is a 0-100% slider (`maskDim`), not a
+  toggle.
+- **Background asset** — an optional same-size square texture used as the
+  underlay behind the overlay in the editor and all previews (set from the
+  uploader form or the toolbar "Background..." picker; clearable).
+- **Color reveals pixels** — a colour stroke on the color layer writes the
+  colour AND sets alpha=1, so strokes always show in Result view and always
+  reach the export. Alpha erase remains the only way to hide pixels.
+- **Chrome** — the amber active-cell border is gone; tile separation is a
+  crisp 1px SVG line grid (`vector-effect: non-scaling-stroke`); the
+  checkerboard backdrop was removed.
+- **Stroke fix** — dragging across a cell boundary starts a fresh stroke
+  segment instead of smearing a line across the new cell.
+- **Guides toggle** — the bluish dashed connection markers are off by
+  default; a "Guides" checkbox shows them when wanted.
+
+
 ```

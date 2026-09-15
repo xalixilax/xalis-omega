@@ -7,9 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "eb": "pnpm --filter xalis_enchanted_books",
     "ct": "pnpm --filter tooling",
+    "cc": "pnpm --filter ctm-canvas",
     "aggregate": "bun run scripts/sprite-aggregator.ts"
   },
   "dependencies": {
+    "@types/bun": "^1.4.0",
+    "@types/node": "^26.4.0",
     "sharp": "^0.33.5"
   },
   "keywords": [],
