@@ -25,12 +25,14 @@ import {
   clearAutosave,
   type Serializable,
 } from "@/routes/-hooks/use-autosave"
-import { editorStore } from "@/routes/-lib/store"
+import { useKeyboardShortcuts } from "@/routes/-hooks/use-keyboard-shortcuts"
+import { resetDocument } from "@/routes/-lib/actions"
 
 export const Route = createFileRoute("/")({ component: Home })
 
 function Home() {
   useAutosave()
+  useKeyboardShortcuts()
   const [prompted, setPrompted] = useState(false)
   const [saved, setSaved] = useState<Serializable | null>(null)
   const [clearOpen, setClearOpen] = useState(false)
@@ -51,8 +53,7 @@ function Home() {
 
   const onClearSession = () => {
     clearAutosave()
-    editorStore.setState((prev) => ({ ...prev, ready: false }))
-    window.location.reload()
+    resetDocument()
   }
 
   return (

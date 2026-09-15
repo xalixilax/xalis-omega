@@ -17,24 +17,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils.ts"
+import { initDocument, applyTemplateAlpha } from "@/routes/-lib/actions"
 import {
-  decodeImage,
-  extractPalette,
-  fillAlphaSheetFromTemplate,
-  fillBaseSheetFromImage,
-  fillColorSheetFromImage,
-  loadImage,
-  loadImageFromFile,
-  validateSquareImage,
-} from "@/routes/-lib/image"
-import { templates, defaultTemplateId } from "@/routes/-lib/templates"
-import { editorStore } from "@/routes/-lib/store"
-import { SHEET_COLS, SHEET_ROWS } from "@/routes/-lib/overlay"
+  alphaTemplates,
+  DEFAULT_TEMPLATE_ID,
+} from "@/routes/-lib/templates"
 import { useEditorState } from "@/routes/-hooks/use-editor-store"
 
 export function EditorUploader() {
   const state = useEditorState()
   const fileRef = useRef<HTMLInputElement>(null)
+  const [templateId, setTemplateId] = useState(DEFAULT_TEMPLATE_ID)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -43,34 +37,12 @@ export function EditorUploader() {
     setBusy(true)
     setError(null)
     try {
-      const img = await loadImageFromFile(file)
-      const decoded = decodeImage(img)
-      const tileSize = validateSquareImage(decoded)
-      const palette = extractPalette(decoded)
-      const colorSheet = fillColorSheetFromImage(decoded)
-      const baseSheet = fillBaseSheetFromImage(decoded)
-      const templateId = state.templateId || defaultTemplateId
-      const template = templates.find((t) => t.id === templateId) ?? templates[0]
-      const templateImg = await loadImage(template.url)
-      const decodedTemplate = decodeImage(templateImg)
-      const alphaSheet = fillAlphaSheetFromTemplate(decodedTemplate, tileSize)
-      const sheetWidth = SHEET_COLS * tileSize
-      const sheetHeight = SHEET_ROWS * tileSize
-      editorStore.setState((prev) => ({
-        ...prev,
-        ready: true,
-        tileSize,
-        templateId,
-        base: baseSheet,
-        baseImage: img,
-        alpha: alphaSheet,
-        color: colorSheet,
-        palette: palette.hex,
-        activeColor: palette.hex[0] ?? null,
-        tool: "paint",
-        sheetWidth,
-        sheetHeight,
-      }))
+      const template = alphaTemplates.find((t) => t.id === templateId)
+      await initDocument(file, template?.url ?? null, file.name, null)
+      setPreviewUrl((previous) => {
+        if (previous !== null) URL.revokeObjectURL(previous)
+        return URL.createObjectURL(file)
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -78,15 +50,15 @@ export function EditorUploader() {
     }
   }
 
-  const applyTemplate = async (id: string) => {
-    const tpl = templates.find((t) => t.id === id)
-    if (!tpl) return
-    editorStore.setState((prev) => ({ ...prev, templateId: id }))
-    if (!state.ready) return
-    const tplImg = await loadImage(tpl.url)
-    const decoded = decodeImage(tplImg)
-    const alpha = fillAlphaSheetFromTemplate(decoded, state.tileSize)
-    editorStore.setState((prev) => ({ ...prev, alpha }))
+  const applyTemplate = (id: string) => {
+    setTemplateId(id)
+    if (state.tileSize === null) return
+    const template = alphaTemplates.find((t) => t.id === id)
+    if (!template) return
+    setError(null)
+    applyTemplateAlpha(template.url).catch((err) => {
+      setError(err instanceof Error ? err.message : String(err))
+    })
   }
 
   return (
@@ -128,18 +100,20 @@ export function EditorUploader() {
             busy && "pointer-events-none opacity-50",
           )}
         >
-          {state.ready && state.baseImage ? (
+          {state.tileSize !== null || previewUrl !== null ? (
             <>
               <div className="grid size-20 place-items-center rounded-md border bg-[repeating-conic-gradient(rgba(23,58,64,0.07)_0%_25%,transparent_0%_50%)] bg-[length:16px_16px] p-2">
-                <img
-                  src={state.baseImage.src}
-                  alt="Uploaded base texture"
-                  className="max-h-full max-w-full"
-                  style={{ imageRendering: "pixelated" }}
-                />
+                {previewUrl !== null && (
+                  <img
+                    src={previewUrl}
+                    alt="Uploaded base texture"
+                    className="max-h-full max-w-full"
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                )}
               </div>
               <p className="text-sm font-semibold">
-                {state.tileSize}px base texture loaded
+                {state.tileSize ?? "?"}px base texture loaded
               </p>
               <p className="text-xs text-muted-foreground">
                 Drag another PNG here or click to replace
@@ -159,7 +133,7 @@ export function EditorUploader() {
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="alpha-template">Alpha template</Label>
           <Select
-            value={state.templateId}
+            value={templateId}
             onValueChange={(id) => {
               if (id) applyTemplate(id)
             }}
@@ -168,7 +142,7 @@ export function EditorUploader() {
               <SelectValue placeholder="Select a template" />
             </SelectTrigger>
             <SelectContent>
-              {templates.map((t) => (
+              {alphaTemplates.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
                   {t.label}
                 </SelectItem>

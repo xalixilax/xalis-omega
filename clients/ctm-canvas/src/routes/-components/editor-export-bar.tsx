@@ -9,39 +9,50 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { editorStore } from "@/routes/-lib/store"
-import { useEditorState } from "@/routes/-hooks/use-editor-store"
 import {
-  composeSheetImage,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { setExportConfig } from "@/routes/-lib/actions"
+import {
+  buildProperties,
+  composeOverlaySheet,
   downloadBlob,
-  propertiesFileContent,
-  sheetImageToPngBlob,
-} from "@/routes/-lib/image"
+  downloadText,
+  propertiesFileName,
+  sheetToImageData,
+} from "@/routes/-lib/export"
+import { encodePng } from "@/routes/-lib/image"
+import { editorStore, type LayerOption } from "@/routes/-lib/store"
+import { useEditorState } from "@/routes/-hooks/use-editor-store"
+
+const LAYERS: LayerOption[] = ["cutout_mipped", "cutout", "translucent"]
 
 export function EditorExportBar() {
   const state = useEditorState()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const setField = (key: "matchBlocks" | "connectBlocks" | "blockName" | "layer") => (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = e.target.value
-    editorStore.setState((prev) => ({ ...prev, [key]: value }))
-  }
+  const ready =
+    state.tileSize !== null &&
+    state.base !== null &&
+    state.alpha !== null &&
+    state.color !== null
 
   async function onExportPng() {
-    if (!state.ready || !state.alpha || !state.color) return
+    const { tileSize, base, color, alpha, baseName } = editorStore.state
+    if (tileSize === null || base === null || color === null || alpha === null) {
+      return
+    }
     setBusy(true)
     setError(null)
     try {
-      const composed = composeSheetImage({
-        color: state.color,
-        alpha: state.alpha,
-        tileSize: state.tileSize,
-      })
-      const blob = await sheetImageToPngBlob(composed)
-      downloadBlob(blob, `${state.blockName || "block"}_0.png`)
+      const sheet = composeOverlaySheet(tileSize, base, color, alpha)
+      const blob = await encodePng(sheetToImageData(sheet))
+      downloadBlob(`${baseName || "block"}.png`, blob)
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err))
     } finally {
@@ -50,14 +61,15 @@ export function EditorExportBar() {
   }
 
   function onExportProperties() {
-    if (!state.ready) return
-    const content = propertiesFileContent({
-      matchBlocks: state.matchBlocks,
-      connectBlocks: state.connectBlocks,
-      layer: state.layer,
-    })
-    const blob = new Blob([content], { type: "text/plain" })
-    downloadBlob(blob, `0_${state.blockName || "block"}.properties`)
+    if (!ready) return
+    downloadText(
+      propertiesFileName(state.startIndex, state.matchBlocks),
+      buildProperties({
+        matchBlocks: state.matchBlocks,
+        connectBlocks: state.connectBlocks,
+        layer: state.layer,
+      }),
+    )
   }
 
   return (
@@ -71,16 +83,57 @@ export function EditorExportBar() {
             <Label htmlFor="block-name">Block name</Label>
             <Input
               id="block-name"
-              value={state.blockName}
-              onChange={setField("blockName")}
+              value={state.baseName}
+              onChange={(e) =>
+                editorStore.setState((prev) => ({
+                  ...prev,
+                  baseName: e.target.value,
+                }))
+              }
             />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="layer">Layer</Label>
-            <Input
-              id="layer"
+            <Select
               value={state.layer}
-              onChange={setField("layer")}
+              onValueChange={(value) => {
+                if (value)
+                  setExportConfig({ layer: value as LayerOption })
+              }}
+            >
+              <SelectTrigger id="layer" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LAYERS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="start-index">Start index</Label>
+            <Input
+              id="start-index"
+              type="number"
+              min={0}
+              value={Number.isNaN(state.startIndex) ? 0 : state.startIndex}
+              onChange={(e) =>
+                setExportConfig({ startIndex: Number(e.target.value) })
+              }
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="connect-blocks">Connect blocks</Label>
+            <Input
+              id="connect-blocks"
+              value={state.connectBlocks}
+              onChange={(e) =>
+                setExportConfig({ connectBlocks: e.target.value })
+              }
+              placeholder="optional"
             />
           </div>
           <div className="col-span-2 flex flex-col gap-1.5">
@@ -88,17 +141,8 @@ export function EditorExportBar() {
             <Input
               id="match-blocks"
               value={state.matchBlocks}
-              onChange={setField("matchBlocks")}
-              placeholder="amethyst_blocks grass_block"
-            />
-          </div>
-          <div className="col-span-2 flex flex-col gap-1.5">
-            <Label htmlFor="connect-blocks">Connect blocks</Label>
-            <Input
-              id="connect-blocks"
-              value={state.connectBlocks}
-              onChange={setField("connectBlocks")}
-              placeholder="amethyst_block budding_amethyst"
+              onChange={(e) => setExportConfig({ matchBlocks: e.target.value })}
+              placeholder="minecraft:stone"
             />
           </div>
         </div>
@@ -106,7 +150,7 @@ export function EditorExportBar() {
           <Button
             type="button"
             onClick={onExportPng}
-            disabled={!state.ready || busy}
+            disabled={!ready || busy}
             className="flex-1"
           >
             {busy ? "Exporting…" : "Download PNG"}
@@ -115,7 +159,7 @@ export function EditorExportBar() {
             type="button"
             variant="outline"
             onClick={onExportProperties}
-            disabled={!state.ready}
+            disabled={!ready}
             className="flex-1"
           >
             Download .properties

@@ -1,80 +1,178 @@
 import { useCallback, useRef } from "react"
-import { SHEET_COLS, TILE_COUNT } from "@/routes/-lib/overlay"
+import type { PointerEvent as ReactPointerEvent, RefObject } from "react"
+import { paintStroke, pickPixel } from "@/routes/-lib/actions"
+import { beginStroke, commitStroke } from "@/routes/-lib/history"
+import { GRID_COLS } from "@/routes/-lib/sheet"
+import { editorStore } from "@/routes/-lib/store"
 
-export type PixelPointer = {
-  cell: number
-  px: number
-  py: number
-}
+type PixelPoint = { x: number; y: number }
 
-type UsePixelPointerOpts = {
-  tileSize: number
-  onPaint: (cell: number, px: number, py: number, isRight: boolean) => void
+/** Pixel the pointer hovers, in whole-sheet pixel coordinates. */
+export type PointerTarget = { x: number; y: number }
+
+function linePoints(from: PixelPoint, to: PixelPoint): PixelPoint[] {
+  const points: PixelPoint[] = []
+  const dx = Math.abs(to.x - from.x)
+  const dy = Math.abs(to.y - from.y)
+  const sx = from.x < to.x ? 1 : -1
+  const sy = from.y < to.y ? 1 : -1
+  let error = dx - dy
+  let x = from.x
+  let y = from.y
+  for (;;) {
+    points.push({ x, y })
+    if (x === to.x && y === to.y) {
+      break
+    }
+    const error2 = 2 * error
+    if (error2 > -dy) {
+      error -= dy
+      x += sx
+    }
+    if (error2 < dx) {
+      error += dx
+      y += sy
+    }
+  }
+  return points
 }
 
 /**
- * Translate pointer events on a CSS-scaled HTML5 canvas (backed by a native
- * sheetWidth x sheetHeight drawing buffer) into tile-cell + pixel coordinates.
+ * Translate canvas pointer events into whole-sheet pixel coordinates and feed
+ * the active tool. Strokes are not clipped at tile boundaries: the sheet is
+ * edited as one canvas. The right button always erases, even while a paint
+ * drag is in progress. Hover positions are reported through `onHoverChange`
+ * so the component can render the brush marker.
  */
-export function usePixelPointer(opts: UsePixelPointerOpts) {
-  const { tileSize, onPaint } = opts
-  const paintingRef = useRef(false)
-  const buttonRef = useRef(0)
+export function usePixelPointer(
+  canvasRef: RefObject<HTMLCanvasElement | null>,
+  scrollRef: RefObject<HTMLElement | null>,
+  onHoverChange: (target: PointerTarget | null) => void,
+) {
+  const lastPixel = useRef<PixelPoint | null>(null)
+  const panning = useRef<{
+    pointerX: number
+    pointerY: number
+    scrollLeft: number
+    scrollTop: number
+  } | null>(null)
 
-  const getCoords = useCallback(
-    (e: React.PointerEvent<HTMLCanvasElement>): PixelPointer | null => {
-      const canvas = e.currentTarget
+  const toSheetPixel = useCallback(
+    (event: ReactPointerEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current
+      const { tileSize } = editorStore.state
+      if (!canvas || tileSize === null) {
+        return null
+      }
       const rect = canvas.getBoundingClientRect()
-      if (rect.width === 0 || rect.height === 0) return null
-      const scaleX = (SHEET_COLS * tileSize) / rect.width
-      const scaleY = (3 * tileSize) / rect.height
-      const cssX = e.clientX - rect.left
-      const cssY = e.clientY - rect.top
-      const x = Math.floor(cssX * scaleX)
-      const y = Math.floor(cssY * scaleY)
-      const cellCol = Math.min(SHEET_COLS - 1, Math.max(0, Math.floor(x / tileSize)))
-      const cellRow = Math.min(2, Math.max(0, Math.floor(y / tileSize)))
-      const cell = cellRow * SHEET_COLS + cellCol
-      const px = x - cellCol * tileSize
-      const py = y - cellRow * tileSize
-      return { cell, px, py }
+      const px = Math.floor(
+        ((event.clientX - rect.left) * canvas.width) / rect.width,
+      )
+      const py = Math.floor(
+        ((event.clientY - rect.top) * canvas.height) / rect.height,
+      )
+      if (px < 0 || py < 0 || px >= canvas.width || py >= canvas.height) {
+        return null
+      }
+      return { x: px, y: py }
     },
-    [tileSize],
+    [canvasRef],
   )
 
   const onPointerDown = useCallback(
-    (e: React.PointerEvent<HTMLCanvasElement>) => {
-      e.preventDefault()
-      ;(e.target as Element).setPointerCapture?.(e.pointerId)
-      const pos = getCoords(e)
-      if (!pos) return
-      if (pos.cell >= TILE_COUNT) return
-      paintingRef.current = true
-      buttonRef.current = e.button
-      onPaint(pos.cell, pos.px, pos.py, e.button === 2)
+    (event: ReactPointerEvent<HTMLCanvasElement>) => {
+      const tool = editorStore.state.tool
+      if (tool === "pan") {
+        const container = scrollRef.current
+        if (container) {
+          panning.current = {
+            pointerX: event.clientX,
+            pointerY: event.clientY,
+            scrollLeft: container.scrollLeft,
+            scrollTop: container.scrollTop,
+          }
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }
+        return
+      }
+
+      const target = toSheetPixel(event)
+      if (!target) {
+        return
+      }
+      event.currentTarget.setPointerCapture(event.pointerId)
+      if (tool === "picker" && (event.buttons & 2) === 0) {
+        const { tileSize } = editorStore.state
+        if (tileSize !== null) {
+          const col = Math.floor(target.x / tileSize)
+          const row = Math.floor(target.y / tileSize)
+          pickPixel(
+            row * GRID_COLS + col,
+            target.x - col * tileSize,
+            target.y - row * tileSize,
+          )
+        }
+        return
+      }
+      lastPixel.current = target
+      beginStroke()
+      paintStroke([target], (event.buttons & 2) !== 0)
     },
-    [getCoords, onPaint],
+    [toSheetPixel, scrollRef],
   )
 
   const onPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!paintingRef.current) return
-      const pos = getCoords(e)
-      if (!pos) return
-      if (pos.cell >= TILE_COUNT) return
-      onPaint(pos.cell, pos.px, pos.py, buttonRef.current === 2)
+    (event: ReactPointerEvent<HTMLCanvasElement>) => {
+      const panState = panning.current
+      if (panState) {
+        const container = scrollRef.current
+        if (container) {
+          container.scrollLeft =
+            panState.scrollLeft - (event.clientX - panState.pointerX)
+          container.scrollTop =
+            panState.scrollTop - (event.clientY - panState.pointerY)
+        }
+        return
+      }
+      const target = toSheetPixel(event)
+      // Brush marker follows the pointer even while not painting.
+      onHoverChange(target)
+      if ((event.buttons & 3) === 0) {
+        lastPixel.current = null
+        return
+      }
+      if (!target) {
+        lastPixel.current = null
+        return
+      }
+      const last = lastPixel.current
+      const from = last ?? target
+      const points =
+        from.x === target.x && from.y === target.y
+          ? [target]
+          : linePoints(from, target)
+      lastPixel.current = target
+      paintStroke(points, (event.buttons & 2) !== 0)
     },
-    [getCoords, onPaint],
+    [toSheetPixel, scrollRef, onHoverChange],
   )
 
   const onPointerUp = useCallback(() => {
-    paintingRef.current = false
-    buttonRef.current = 0
+    lastPixel.current = null
+    panning.current = null
+    commitStroke()
   }, [])
 
-  const onContextMenu = useCallback((e: React.MouseEvent) => {
-    e.preventDefault()
-  }, [])
+  const onPointerLeave = useCallback(() => {
+    lastPixel.current = null
+    onHoverChange(null)
+  }, [onHoverChange])
 
-  return { onPointerDown, onPointerMove, onPointerUp, onContextMenu }
+  return {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onPointerCancel: onPointerUp,
+    onPointerLeave,
+  }
 }
