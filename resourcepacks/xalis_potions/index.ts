@@ -1,6 +1,6 @@
 import { execute as generateItems } from "./vanilla/generateItems";
 import { execute as generateModels } from "./vanilla/generateModels";
-import { copyCustomFolder, execute as init } from "@lib/resourcepacks/setup";
+import { copyCustomFolder, execute as init } from "@lib/minecraft/setup";
 import { config } from "./config";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

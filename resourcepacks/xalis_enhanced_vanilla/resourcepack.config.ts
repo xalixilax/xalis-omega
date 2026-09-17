@@ -1,3 +1,5 @@
+import { fileURLToPath } from "node:url";
+
 type Config = {
 	name: string;
 	licenseUrl: string;
@@ -27,10 +29,7 @@ export const config: Config = {
 		description: "page-description.md",
 	},
 	build: {
-		output:
-		"/Users/xalix/Library/Application Support/PrismLauncher/instances/1.21.5(1)/minecraft/resourcepacks/enhanced-vanilla-dev"
-			//"/Users/xalix/Library/Application Support/PrismLauncher/instances/Fabulously Optimized/minecraft/resourcepacks/release",
-		//"./dist",
+		output: fileURLToPath(new URL("./dist", import.meta.url)),
 	},
 	optimize: true,
 };

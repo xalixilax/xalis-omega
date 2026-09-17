@@ -1,0 +1,36 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*/v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check tag against package.json
+        run: |
+          PACK="${GITHUB_REF_NAME%%/*}"
+          VERSION="${GITHUB_REF_NAME#*/v}"
+          PACKAGE_VERSION=$(jq -r .version "resourcepacks/$PACK/package.json")
+          if [ "$PACKAGE_VERSION" != "$VERSION" ]; then
+            echo "Tag $VERSION does not match resourcepacks/$PACK/package.json ($PACKAGE_VERSION)"
+            exit 1
+          fi
+
+      - name: Build and publish
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: pnpm release "${GITHUB_REF_NAME%%/*}" --publish

@@ -1,4 +1,5 @@
 
+import { fileURLToPath } from "node:url";
 import type { Config } from "@lib/src/types/config";
 
 export const config: Config = {
@@ -13,9 +14,6 @@ export const config: Config = {
 		description: "page-description.md",
 	},
 	build: {
-		output:
-			//"/Users/xalix/Library/Application Support/PrismLauncher/instances/1.21/.minecraft/resourcepacks/release",
-			//"./dist",
-			"/Users/xalix/Library/Application Support/PrismLauncher/instances/1.21.1/minecraft/resourcepacks/books",
+		output: fileURLToPath(new URL("./dist", import.meta.url)),
 	},
 };

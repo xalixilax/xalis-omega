@@ -2,8 +2,7 @@ node_modules
 
 #temp while I figure out what to do with this
 tools
-project-*
-.github
 .DS_Store
 .tmp
 **/.tmp/
+.env

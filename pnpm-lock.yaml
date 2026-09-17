@@ -190,6 +190,16 @@ importers:
         specifier: ^3.2.3
         version: 3.2.3
 
+  packages/release:
+    dependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+    devDependencies:
+      '@types/bun':
+        specifier: latest
+        version: 1.4.2
+
   packages/storybook:
     dependencies:
       react:

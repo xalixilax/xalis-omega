@@ -1,18 +1,3 @@
-# xalis_enhanced_jungle_wood
+# xali's Enhnaced Jungle Wood
 
-"xali's Enhanced Jungle Wood" recolors every jungle wood texture to match the
-color of the note block.
-
-To build:
-
-```bash
-bun install
-bun run build
-```
-
-The generator fetches vanilla jungle textures for
-`globalConfig.minecraftVersion`, swaps their colors to the note block palette,
-and writes the result to the configured resource pack output.
-
-To tune the look, edit `noteBlockPalette` and `jungleTextures` in
-`generate.ts`, then rebuild.
+Introducing Xali's Enhanced Jungle Wood, a captivating texture pack that breathes new life into the world of Minecraft. Experience the lush beauty of the jungle like never before as the textures of jungle wood are completely transformed. Immerse yourself in a vibrant realm where each block radiates with the essence of the wilderness. Let your creativity flourish in a tropical paradise with Xali's Enhanced Jungle Wood texture pack.
