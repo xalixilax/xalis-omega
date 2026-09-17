@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 export const globalConfig = {
-    output: "/Users/xalix/Library/Application Support/PrismLauncher/instances/26.2/minecraft/resourcepacks"
+    output: "/Users/xalix/Library/Application Support/PrismLauncher/instances/26.2/minecraft/resourcepacks",
     // join(
     //     homedir(),
     //     process.platform === "linux"
