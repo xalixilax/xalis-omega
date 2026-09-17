@@ -1,5 +1,4 @@
 #!/usr/bin/env bun
-import { existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { run } from "./build";
 
@@ -9,11 +8,7 @@ if (basename(dirname(packDir)) !== "resourcepacks") {
     process.exit(1);
 }
 
-const bump = process.argv[2];
-if (!bump) {
-    console.error("Usage: pnpm -F <pack> release <major|minor|patch|prerelease|version> [--preid=beta]");
-    process.exit(1);
-}
+const bump = process.argv[2] ?? "patch";
 
 const manifestPath = join(packDir, "package.json");
 const original = await Bun.file(manifestPath).text();
@@ -37,10 +32,7 @@ if (tagExists) {
     throw new Error(`Tag ${tag} already exists, package.json restored to ${manifest.version}`);
 }
 
-const files = ["package.json", "CHANGELOG.md", "public/CHANGELOG.md"].filter((file) =>
-    existsSync(join(packDir, file)),
-);
-await run(["git", "add", ...files], packDir);
+await run(["git", "add", "-A"], packDir);
 await run(["git", "commit", "-m", `chore(release): ${manifest.name} v${version}`], packDir);
 await run(["git", "tag", tag], packDir);
 await run(["git", "push", "origin", "HEAD", `refs/tags/${tag}`], packDir);

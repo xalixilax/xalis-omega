@@ -28,6 +28,8 @@ export async function publishModrinth({ config, version, artifactPath, changelog
             featured: false,
             status: "listed",
             dependencies: [],
+            file_parts: ["file"],
+            primary_file: "file",
         }),
     );
     form.append("file", Bun.file(artifactPath), basename(artifactPath));
