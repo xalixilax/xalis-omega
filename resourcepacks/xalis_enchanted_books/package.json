@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "bun run index.ts",
-    "watch": "chokidar 'textures/**/*.png' -c 'bun run build'"
+    "watch": "chokidar 'textures/**/*.png' -c 'bun run build'",
+    "release": "bun run ../../packages/release/src/bump.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
