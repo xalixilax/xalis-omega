@@ -6,9 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "eb": "pnpm --filter xalis_enchanted_books",
+    "jw": "pnpm --filter xalis_enhanced_jungle_wood",
     "ct": "pnpm --filter tooling",
     "cc": "pnpm --filter ctm-canvas",
-    "aggregate": "bun run scripts/sprite-aggregator.ts"
+    "aggregate": "bun run scripts/sprite-aggregator.ts",
+    "swap": "bun run scripts/swap-texture-colors.ts"
   },
   "dependencies": {
     "@types/bun": "^1.4.0",

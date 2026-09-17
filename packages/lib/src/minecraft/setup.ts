@@ -60,6 +60,7 @@ export async function copyCustomFolder(config: Config, folder: string) {
 }
 
 export async function execute(config: Config) {
+  fs.mkdirSync(config.build.output, { recursive: true });
   generateMcmeta(config);
   generateLicense(config);
   copyCustomFolder(config, "public");

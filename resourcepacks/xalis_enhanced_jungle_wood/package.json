@@ -1,0 +1,15 @@
+{
+  "name": "xalis_enhanced_jungle_wood",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun run index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "sharp": "^0.33.5"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
